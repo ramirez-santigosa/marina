@@ -1,4 +1,9 @@
-# README #
+# MARINA #
+
+A Tool for Solar Radiation Series Generation
+--------------------------------------------
+
+MARINA (Multi annual radiation information approach) is a package of M-files for the calculation of solar radiation series, starting from an existing set of measurements. After the QC of measurements, TMY and similar annual condensed sequences of solar radiation can be addressed.
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
