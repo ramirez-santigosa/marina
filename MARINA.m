@@ -5,7 +5,7 @@
 % Developed in the context of ASTRI
 %
 % GENERAL PROGRAM 
-% Version of July, 2015. L. Ramírez; At CSIRO.
+% Version of January, 2017. L. Ramírez, F. Mendoza; At CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %Configuration_BSRN_ASP file
