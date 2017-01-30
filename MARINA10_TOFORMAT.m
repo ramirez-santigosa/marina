@@ -42,7 +42,7 @@ run('Configuration_BSRN_ASP.m');
 for anno=anno_ini:anno_end
     
     anno_str     = num2str(anno);
-    disp(sprintf('Treatment of %s year %s',name,anno_str)); 
+    fprintf('Treatment of %s year %s\n',name,anno_str); 
     filedata.ID     = anno_str; 
 
     [name_out,datos]=Year_BSRN_to_format(ruta_in,ruta_format,filedata,timedata,nodata,anno);

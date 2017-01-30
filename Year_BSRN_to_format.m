@@ -92,7 +92,7 @@ set(hleg,'Location','SouthEastOutside');
 set(hleg,'Fontsize',16);
 grid on;
 % saveas(gcf,strcat(ruta_out,'\','Summary',aaaa),'png');
-print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\','Summary',aaaa))
+print('-djpeg','-opengl','-r350',strcat(ruta_fig,'\','Summary',aaaa))
 
 % MAKE  A ESTRUCTURED VARIABLE FOR EACH YEAR
 [name_out,datos]=...
