@@ -9,12 +9,12 @@ This README would normally document whatever steps are necessary to get your app
 
 ### Modules: ###
 
-* To format: input data are converted into a internal structured format
+* To format: input data are converted into a internal structured format.
 * QC: as described in ...
-* Validation: based in the World Radiation Data Centre (WRDC).
-* Candidates selection: made by standard TMY methodology (FS statistic) or, in the multi-annual approach, a sampling exercise (repeated n-times) in the normal distribution fitted to the monthly valid data month by month.
+* Qualification & Gap Filling: 
+* Candidates selection: made by standard TMY methodologies (NREL, Lund, Festa & Ratto).
 * Annual series generation: achieve specific requested monthly values from the data-bank delivered in the validation module.
-* Adding meteorological data: a specific module taking into account the input meteorological data.
+[comment]: <> (* Adding meteorological data: a specific module taking into account the input meteorological data.)
 
 ### What is this repository for? ###
 
