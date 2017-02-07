@@ -24,9 +24,8 @@
 %       figuras filtros por variables
 %       figura ghi medida vs. calculada
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clear
-clc
-close all
+
+clear, clc, close all
 run('Configuration_BSRN_ASP.m');
 
 for anno=anno_ini:anno_end
