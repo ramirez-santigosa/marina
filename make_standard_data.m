@@ -38,7 +38,7 @@ function [out_name,out_data]=make_standard_data...
 % data.geodata.lon:         longitude[ºE]
 % data.geodata.alt:         altitude a.s.l. [m]
 % data.timedata.timezone:   time zone
-% data.timedata.etiq:       0 ini int / 0.5 centre int / 1 end int
+% data.timedata.stamp:      0 ini int / 0.5 centre int / 1 end int
 % data.timedata.num_obs:    number of observations per hour
 % data.nodata:              no data value
 % data.header:              headers of the matrix columns

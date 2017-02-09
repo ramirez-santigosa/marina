@@ -10,12 +10,12 @@
 % INPUT: 
 % ..\OUTPUTS\1_FORMAT
 %       One matlab file per year: datos    'ASP00-BOM-01-1995' 
-%       Each file contains the structured variable   'datos'
+%       Each file contains the structured variable   'data'
 % 
 % OUTPUTS: 
 % ..\OUTPUT\2_QC
-%       One matlab file per year: datosc   'ASP00-BOM-01-1995_QC' 
-%       Each file contains the structured variable   'datosc'
+%       One matlab file per year: dataqc   'ASP00-BOM-01-1995_QC' 
+%       Each file contains the structured variable   'dataqc'
 %       Same as "datos" but adding two more variables,
 %           (records are sorted and a the year is full)
 %  (1)  datos.matc  = [fecha_vec(:,1:6)(TSV)/ GHIord eGHI DNIord eDNI DHIord eDHI];
@@ -25,35 +25,41 @@
 %       figura ghi medida vs. calculada
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear, clc, close all
-run('Configuration_BSRN_ASP.m');
+clearvars -except year_ini year_end ref_temp time_stamp num_obs no_data...
+    tzone name loc owner_station path_in path_meteo path_format path_qc...
+    path_val path_cases path_tmy path_trans filedata
+close %clc
+% run('Configuration_BSRN_ASP.m');
 
-for anno=anno_ini:anno_end
-    
-    anno_str     = num2str(anno);
-    
-    disp(sprintf('Treatment of %s year %s',name,anno_str)); 
+for y = year_ini:year_end
+        
+    year_str = num2str(y);
+    fprintf('Quality control of %s year %s\n',name,year_str);
 
-    ruta_fig_anno_ini=strcat(ruta_qc,'\','figures');
-    [s,mess,messid] = mkdir(ruta_fig_anno_ini);
-    var      = [1 1 1]; % Variables for QC process [GHI DNI DHI] 1(yes)/0(no)
-    ofset_empirico = 0; % Just in case the results seems have timestamp mistakes
-    max_rad  = 1600;    % max. solar radiation value for the figures
-    % columns of the .mat matrix
+    path_fig_year_ini = strcat(path_qc,'\','figures');
+    if ~exist(path_fig_year_ini,'dir')
+        mkdir(path_fig_year_ini);
+    end
+    
+    var = [1 1 1]; % Variables for QC process [GHI DNI DHI] 1(yes)/0(no)
+    offset_empirical = 0; % Just in case the results seems have timestamp mistakes
+    max_rad = 1600; % max. solar radiation value for the figures
+    
+    % Columns of the .mat matrix
     mat_cols.date = 1:6; % dates[1..6];
     mat_cols.GHI = 7;   
     mat_cols.DNI = 8;   
     mat_cols.DHI = 9;   
 
-    filedata.ID     = anno_str; 
+    filedata.ID = year_str; 
     
     name_out = [filedata.loc '00-' filedata.own '-' filedata.num '-' filedata.ID];
-    load(strcat(ruta_format,'\',name_out));
+    load(strcat(path_format,'\',name_out)); % Load of the standard data structure
     
-    [datosc]=QC_JULY_2015...
-       (ruta_fig_anno_ini,datos,var,max_rad,mat_cols,zonaH,ofset_empirico);  
+    [dataqc] = QC_JULY_2015...
+       (path_fig_year_ini,data,var,max_rad,mat_cols,tzone,offset_empirical);  
     close all
     
-    save(strcat(ruta_qc,'\',name_out,'_QC'),'datosc');
+    save(strcat(path_qc,'\',name_out,'_QC'),'dataqc');
     
 end    

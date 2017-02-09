@@ -18,8 +18,8 @@ function [name_out,data] = Year_BSRN_to_format...
 %% Output file per year
 
 num_var = 3; % Number of variables considered GHI DNI DHI
-date_year = zeros(num_obs*8760,6); % Preallocate
-data_year = zeros(num_obs*8760,num_var); % Preallocate
+date_year = zeros(num_obs*8784,6); % Preallocate, considered leap years
+data_year = zeros(num_obs*8784,num_var); % Preallocate, considered leap years
 
 yyyy = num2str(year);
 row_summary = 1; % Init summary row
@@ -48,6 +48,7 @@ for month = 1:12
     if fid > -1  % exists the file
         fclose(fid);
         [ok, ~, geo, dates, info, col] = read_BSRN_LR0100(file_id);
+        info(isnan(info)) = nodata; % Assign no data value, per default in the import process unimportable cells are replaced with NaN
         
         if ok == 1 % exist and the inner information is ok
             dates_vec = datevec(dates);
@@ -58,7 +59,7 @@ for month = 1:12
             sum_col(row_summary,2) = col.DNI;
             sum_col(row_summary,3) = col.DHI;
             
-            data_month = NaN(length(info),num_var); % Init data month
+            data_month = nodata*ones(length(info),num_var); % Init data month
             %saving the data
             if ~isnan(col.GHI)
                 data_month(:,1) = info(:,col.GHI);

@@ -58,19 +58,19 @@ if (is_data==1 || is_text==1) %if both fields exist
     hh = Date_mat(:,12:13);
     mi = Date_mat(:,15:16);
     
-    %     year = zeros(length(yyyy),1); % a = cellstr(yyyy);
-    %     month = zeros(length(mm),1);
-    %     day = zeros(length(dd),1);
-    %     hour = zeros(length(hh),1);
-    %     min = zeros(length(mi),1);
-    %
-    %     for i = 1:length(yyyy)
-    %         year(i) = str2double(yyyy(i,:));
-    %         month(i) = str2double(mm(i,:));
-    %         day(i) = str2double(dd(i,:));
-    %         hour(i) = str2double(hh(i,:));
-    %         min(i) = str2double(mi(i,:));
-    %     end
+%     year = zeros(length(yyyy),1); % a = cellstr(yyyy);
+%     month = zeros(length(mm),1);
+%     day = zeros(length(dd),1);
+%     hour = zeros(length(hh),1);
+%     min = zeros(length(mi),1);
+% 
+%     for i = 1:length(yyyy)
+%         year(i) = str2double(yyyy(i,:));
+%         month(i) = str2double(mm(i,:));
+%         day(i) = str2double(dd(i,:));
+%         hour(i) = str2double(hh(i,:));
+%         min(i) = str2double(mi(i,:));
+%     end
     
     year = str2num(yyyy); % year = str2double(a);
     month = str2num(mm);

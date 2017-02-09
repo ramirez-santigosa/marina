@@ -16,16 +16,16 @@
 
 % Specific years of threatment
 year_ini = 1995; % Initial year of data
-year_end = 2014; % Final year of data. Use the same initial year in case of 1 year
+year_end = 1995; % Final year of data. Use the same initial year in case of 1 year
 
 % General for BSRN STATION
-ref_temp = 'UTC+00'; % TST / UTCSXX (S sign, XX shift)
+ref_temp = 'UTC+00'; % TST / UTCSXX (S sign, XX shift) !!!
 time_stamp = 0; % Values: 0/0.5/1 related to beginning/mid/end
 num_obs = 60; % Number of observations per hour
-no_data = NaN; % No data value: Not-a-Number
+no_data = NaN; % No data value
 
 % Specific for Alice Spring
-%! timezone = 9.5; % Time zone
+tzone = 9.5; % Specific time zone !!! Diferencia con ref_temp
 name = 'ALICE_SPRING_BSRN'; % ID BSRN + 00
 loc = 'ASP'; %
 owner_station = 'BOM'; % Boureau of Meterology
