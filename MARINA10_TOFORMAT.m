@@ -25,11 +25,11 @@
 % data.filedata.loc:        location
 % data.filedata.name:       name for the output information
 % data.filedata.num:        number of the station
-% data.filedata.ID:         Year of the data stored in the structure (identifier)
+% data.filedata.ID:         year of the data stored in the structure (identifier)
 % data.geodata.lat:         latitude [ºN]
 % data.geodata.lon:         longitude[ºE]
 % data.geodata.alt:         altitude a.s.l. [m]
-% data.timedata.timezone:   time zone
+% data.timedata.timezone:   time reference in which data is acquired
 % data.timedata.stamp:      0 ini int / 0.5 centre int / 1 end int
 % data.timedata.num_obs:    number of observations per hour
 % data.nodata:              no data value
@@ -43,9 +43,9 @@
 filedata.own = owner_station;
 filedata.loc = loc;
 filedata.name = name;
-filedata.num = '01'; % num of the station (could be more than one station)
-% geodata is read from data file
-timedata.timezone = ref_temp;
+filedata.num = num;
+% geodata is read from data file (lat, lon, alt)
+timedata.timezone = ref_temp; % Time reference in which data is acquired
 timedata.stamp = time_stamp;
 timedata.num_obs = num_obs;
 nodata = no_data;

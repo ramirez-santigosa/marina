@@ -1,6 +1,5 @@
 function [ok,ID, geo, dates, data, col] = read_BSRN_LR0100(filename)
-%READ_BSRN_LR0100 This function reads the monthly files containing the BSRN
-%LR0100
+%READ_BSRN_LR0100 Reads the monthly files containing the BSRN LR0100
 %   INPUT:
 %   filename: Name of the file with the whole path.
 %
@@ -8,50 +7,48 @@ function [ok,ID, geo, dates, data, col] = read_BSRN_LR0100(filename)
 %   ok: ok = 1, not ok = 0
 %   ID: BSRN station ID
 %   geo: Structure
-%        geo.lat latitude decimal degree
-%        geo.lon longitude decimal degree
-%        geo.alt height meters)
+%        geo.lat latitude (decimal degree)
+%        geo.lon longitude (decimal degree)
+%        geo.alt altitude (meters)
 %   dates: a numerical vector with the data dates
 %   data: a numerical matrix with the data
 %   col: Structure
-%        col.GHI GHI column position
-%        col.DHI DHI column position
-%        col.DNI DHI column position
-%        col.LWD LWD column position
+%        col.GHI: GHI column position
+%        col.DHI: DHI column position
+%        col.DNI: DHI column position
+%        col.LWD: LWD column position
 %
-% Lourdes Ramírez May 2015
+% - L. Ramírez (May 2015)
+% - F. Mendoza (February 2017)
 
 % Open an ASCII file delimited by tabs with 1 headers line
 my_data = importdata(filename,'\t', 1);
 % my_data.textdata = header and text data (station and date)
 % my_data.data     = matrix with numerical data
 
-% check if textdata and data exist
+% Check if textdata and data exist
 is_data = isfield(my_data, 'data');
 is_text = isfield(my_data, 'textdata');
 
-if (is_data==1 || is_text==1) %if both fields exist
+if (is_data==1 || is_text==1) % If both fields exist
     
     ok = 1;
     num_cols = length(my_data.textdata(1,:));
     
-    %---------------------------------------------------------
+    %----------------------------------------------------------------------
     % WORKING WITH my_data.textdata
     % output: ID (station)
     %         dates (vector with the date values in numeric format)
     %         col   (struct with the column numbers of radiation variables)
-    %---------------------------------------------------------
+    %----------------------------------------------------------------------
     
-    % First column => station ID
-    % (All rows have the same value, only 1 is needed)
+    % First column => station ID (All rows have the same value, only 1 is needed)
     ID = my_data.textdata(2,1);
-    
-    % Second column => dates vector
-    % (the whole vector is needed, not the header)
+    % Second column => dates vector (the whole vector is needed, not the header)
     Date = my_data.textdata(2:end,2);
-    % (convert info character matrix)
+    % Convert into character matrix
     Date_mat = char(Date);
-    % (assign the position for each date variable)
+    % Assign the position for each date variable
     yyyy = Date_mat(:,1:4);
     mm = Date_mat(:,6:7);
     dd = Date_mat(:,9:10);
@@ -81,12 +78,11 @@ if (is_data==1 || is_text==1) %if both fields exist
     dates = datenum(year,month,day,hour,min,0);
     
     % Data headers
-    % 1:id; 2:date; 3:Lat; 4:Lon; 5:Hei;
+    % 1:ID; 2:Date; 3:Lat; 4:Lon; 5:Hei;
     data_headers = cell(num_cols-5,1); % Preallocate cell
     for i = 6:num_cols
         data_headers{i-5,1} = my_data.textdata(1,i);
     end
-    % data_headers=data_headers';
     
     % Finding the columns of each variable
     col.GHI = NaN;
@@ -94,7 +90,7 @@ if (is_data==1 || is_text==1) %if both fields exist
     col.DNI = NaN;
     col.LWD = NaN;
     
-    for i=1:length(data_headers(:,1))
+    for i = 1:length(data_headers(:,1))
         temp = char(data_headers{i,1});
         
         is_GHI = strfind(temp, '(GLOBAL) radiation [W/m**2]');
@@ -118,21 +114,21 @@ if (is_data==1 || is_text==1) %if both fields exist
         end
     end
     
-    %---------------------------------------------------------
+    %----------------------------------------------------------------------
     % WORKING WITH my_data.data
     % output: geo.lat   (latitude)
     %         geo.lon   (longitude)
-    %         geo.alt   (height)
-    %         data  (matrix of output data)
-    %---------------------------------------------------------
+    %         geo.alt   (altitude)
+    %         data      (matrix of output data)
+    %----------------------------------------------------------------------
     
-    geo.lat = my_data.data(1,1);
-    geo.lon = my_data.data(1,2);
-    geo.alt = my_data.data(1,3);
+    geo.lat = my_data.data(1,1); % Latitude
+    geo.lon = my_data.data(1,2); % Longitude
+    geo.alt = my_data.data(1,3); % Altitude
     
-    data = my_data.data(:,4:end);
+    data = my_data.data(:,4:end); % Data
     
-else % if one of the fields does not exist
+else % If one of the fields does not exist
     
     ok = 0;
     ID = NaN;
@@ -142,5 +138,4 @@ else % if one of the fields does not exist
     col = NaN;
     
 end
-
 end

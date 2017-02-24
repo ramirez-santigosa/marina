@@ -11,7 +11,8 @@ function [out_char,ok] = string_chars_num(input,length)
 %   out_char: Output character array
 %   ok: 0 if input longer that length, 1 otherwise
 %
-% (L. Ramírez, abril 2013)
+% - L. Ramírez (April 2013)
+% - F. Mendoza (February 2017) Update
 
 number = num2str(input);
 
@@ -22,4 +23,5 @@ if numel(number) <= length
 else
     out_char(1:length)='0';
     ok = 0;
+end
 end

@@ -10,11 +10,13 @@ function [out_char] = string_chars(input,length,fill_char)
 %   OUTPUT:
 %   out_char: Output character array
 %
-% (L. Ramírez, abril 2013)
+% - L. Ramírez (April 2013)
+% - F. Mendoza (February 2017) Update
 
 if numel(input) < length
     filling(1:(length-numel(input))) = fill_char;
     out_char = [input filling];
 else
     out_char = input(1:length);
+end
 end

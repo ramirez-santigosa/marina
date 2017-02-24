@@ -1,12 +1,13 @@
 function [name_out,data] = Year_BSRN_to_format...
     (path_in,path_out,num_obs,filedata,timedata,nodata,header,year)
-%YEAR_BSRN_TO_FORMAT Summary of this function goes here
+%YEAR_BSRN_TO_FORMAT Reads the input files and saves a standard format
+%structure.
 %   INPUT:
 %   path_in: Path of the input files
 %   path_out: Path of the folder where standard structures will be saved
 %   num_obs: Number of observations per hour
-%   filedata: Info for identificaction and creation of the output file name
-%   timedata: Info related with the time reference of the data
+%   filedata: Info for identification and creation of the output file name
+%   timedata: Info related with the time reference of the station
 %   nodata: No data value
 %   header: Headers of the variables included in the data matrix
 %   year: Year of the data (ID)
@@ -14,12 +15,14 @@ function [name_out,data] = Year_BSRN_to_format...
 %   OUTPUT:
 %   name_out: Name of the output file
 %   data: Standard structure with the data
+%
+% - F. Mendoza (February 2017) Update
 
 %% Output file per year
 
-num_var = 3; % Number of variables considered GHI DNI DHI
-date_year = zeros(num_obs*8784,6); % Preallocate, considered leap years
-data_year = zeros(num_obs*8784,num_var); % Preallocate, considered leap years
+num_var = 3; % Number of variables considered (GHI DNI DHI)
+date_year = zeros(num_obs*8784,6); % Preallocate (considered leap years)
+data_year = zeros(num_obs*8784,num_var); % Preallocate (considered leap years)
 
 yyyy = num2str(year);
 row_summary = 1; % Init summary row
@@ -28,9 +31,7 @@ sum_col = zeros(12,num_var); % Preallocate
 idx = 1;
 
 for month = 1:12
-    %! clear datos_mes fechas_vec
-    
-    %saving a summary of the months
+    % Saving a summary of the months
     sum_date(row_summary,:) = [year month];
     
     mm = num2str(month);
@@ -45,22 +46,21 @@ for month = 1:12
     
     % Test if file exist
     fid = fopen(file_id);
-    if fid > -1  % exists the file
+    if fid > -1  % Exists the file
         fclose(fid);
-        [ok, ~, geo, dates, info, col] = read_BSRN_LR0100(file_id);
-        info(isnan(info)) = nodata; % Assign no data value, per default in the import process unimportable cells are replaced with NaN
+        [ok, ~, geo, dates, info, col] = read_BSRN_LR0100(file_id); % Function
+        info(isnan(info)) = nodata; % Assign no data value. Per default in the import process unimportable cells are replaced with NaN
         
-        if ok == 1 % exist and the inner information is ok
+        if ok == 1 % Exist and the inner information is ok
             dates_vec = datevec(dates);
-            %! fechas = dates_vec(:,1:5);
-            
-            %saving a summary of the variables order
+                        
+            % Saving a summary of the variables order
             sum_col(row_summary,1) = col.GHI;
             sum_col(row_summary,2) = col.DNI;
             sum_col(row_summary,3) = col.DHI;
             
             data_month = nodata*ones(length(info),num_var); % Init data month
-            %saving the data
+            % Saving the data
             if ~isnan(col.GHI)
                 data_month(:,1) = info(:,col.GHI);
             end
@@ -77,29 +77,30 @@ for month = 1:12
             geodata.lon = geo.lon;
             geodata.alt = geo.alt;
             
-            %ADD THE MONTHLY DATA AND DATE TO THE PREVIOUS ONES
+            % Add the monthly data and date to the previous ones
             date_year(idx:idx+length(dates_vec)-1,:) = dates_vec;
             data_year(idx:idx+length(data_month)-1,:) = data_month;
             idx = idx+length(data_month); % Update index
-        else %exist BUT the inside information is NOT ok
+            
+        else % Exist BUT the inside information is NOT ok
             sum_col(row_summary,:) = zeros(1,num_var);
             disp(['File ', file_id, ' exists, but inside information is not ok.']);
         end
         
-    else % the file DOES NOT exists
-        %saving a summary when file does not exist
+    else % File DOES NOT exists
+        % Saving a summary when file does not exist
         sum_col(row_summary,:) = -1*ones(1,num_var);
         disp(['File ', file_id, ' does not exists.'])
     end
     
-    row_summary = row_summary+1; % summary row
+    row_summary = row_summary+1; % Summary row
     
 end
 
 date_year(idx:end,:) = []; % Shrink variables
 data_year(idx:end,:) = [];
 
-%% Plot figure
+%% Plot summary figure
 
 path_fig = strcat(path_out,'\','figures');
 if ~exist(path_fig,'dir')
@@ -111,7 +112,7 @@ axis([0 12 -2 max(max(sum_col))+1]);
 title([' Summary ' yyyy],'Fontsize',16);
 xlabel('Months','Fontsize',16);
 ylabel('Num. column in input file','Fontsize',16);
-hleg=legend('GHI','DNI','DHI');
+hleg = legend('GHI','DNI','DHI');
 % set(hleg,'Location','WestOutside');
 set(hleg,'Location','SouthEastOutside');
 set(hleg,'Fontsize',16);
@@ -123,7 +124,7 @@ print('-djpeg','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
 
 [name_out,data]=...
     make_standard_data(filedata,geodata,timedata,nodata,header,...
-    date_year,data_year(:,1),data_year(:,2),data_year(:,3),[]);% Function
+    date_year,data_year(:,1),data_year(:,2),data_year(:,3),[]); % Function
 
 % Save the summary of dates and column position of the variables
 % aaaa mmm GHI DNI DHI (column position)
