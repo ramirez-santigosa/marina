@@ -16,7 +16,7 @@
 
 % Specific years of threatment
 year_ini = 1995; % Initial year of data
-year_end = 1995; % Final year of data. Use the same initial year in case of 1 year
+year_end = 2014; % Final year of data. Use the same initial year in case of 1 year
 
 % Specific for Alice Spring
 tzone = 9.5; % Specific time zone of the station location

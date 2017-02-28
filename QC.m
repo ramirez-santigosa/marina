@@ -210,7 +210,7 @@ high = ((acos(cosz)*180/pi)<75 & GHIord>50);
 low = ((acos(cosz)*180/pi)>=75 & (acos(cosz)*180/pi)<93 & GHIord>50);
 
 % Setting limits
-maxD = NaN(size(DHIord));
+maxD = zeros(size(DHIord));
 maxD(high) = 1.05*GHIord(high); % For theta_z<75°
 maxD(low) = 1.10*GHIord(low); % For 75°<theta_z<93°
 
@@ -231,10 +231,10 @@ high = ((acos(cosz)*180/pi)<75 & GHIcalc>50);
 low = ((acos(cosz)*180/pi)>=75 & (acos(cosz)*180/pi)<93 & GHIcalc>50);
 
 % Setting limits
-maxG = NaN(size(GHIcalc));
+maxG = zeros(size(GHIcalc));
 maxG(high) = 1.08.*GHIcalc(high); % For theta_z<75°
 maxG(low) = 1.15.*GHIcalc(low); % For 75°<theta_z<93°
-minG = zeros(size(DHIord))-2; % Preguntar por el minimo según paper?!!!
+minG = zeros(size(GHIcalc))-2; % Preguntar por el minimo según paper?!!!
 minG(high) = 0.92.*GHIcalc(high);
 minG(low) = 0.85.*GHIcalc(low);
 
