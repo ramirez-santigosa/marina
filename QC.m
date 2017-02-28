@@ -47,7 +47,7 @@ num_obs = data.timedata.num_obs;
 nodata = data.nodata;
 input = data.mat;
 year = data.mat(floor(length(input)/2),1); % Avoiding the first rows
-file_name = [name num2str(year)]; % For figures title
+file_name = [name,' ',num2str(year)]; % For figures title
 lat_rad = lat*pi/180; % Latitude in radians
 
 %% Assessing the hours jump needed in the time data
@@ -317,7 +317,7 @@ for m=1:12
     plot([0 max_rad],[0 max_rad] ,'-k');
     
     axis([0 max_rad 0 max_rad]);
-    title([file_name ' Month ' m_str ' Consistency ' ],'Fontsize',16);
+    title([file_name ' Month ' m_str ' Consistency ' ],'Fontsize',16,'Interpreter','none');
     xlabel('GHI Measures','Fontsize',16);
     ylabel('GHI calculated','Fontsize',16);
     grid on;
@@ -366,7 +366,7 @@ if var(1)==1
     labels = {'0','1','2','3','4'};
     lcolorbar(labels);
     axis([0 numel(fGHI)/values_day 0 24*num_obs]);
-    title([file_name ' GHI'],'Fontsize',16);
+    title([file_name ' GHI'],'Fontsize',16,'Interpreter','none');
     xlabel('Days','Fontsize',14);
     ylabel('# daily observations','Fontsize',14);
     hold on
@@ -392,7 +392,7 @@ if var(2)==1
     labels = {'0','1','2','3','4'};
     lcolorbar(labels);
     axis([0 numel(fDNI)/values_day 0 24*num_obs]);
-    title([file_name ' DNI'],'Fontsize',16);
+    title([file_name ' DNI'],'Fontsize',16,'Interpreter','none');
     xlabel('Days','Fontsize',14);
     ylabel('# daily observations','Fontsize',14);
     hold on
@@ -418,7 +418,7 @@ if var(3)==1
     labels = {'0','1','2','3','4'};
     lcolorbar(labels);
     axis([0 numel(fDHI)/values_day 0 24*num_obs]);
-    title([file_name ' DHI'],'Fontsize',16);
+    title([file_name ' DHI'],'Fontsize',16,'Interpreter','none');
     xlabel('Days','Fontsize',14);
     ylabel('# daily observations','Fontsize',14);
     hold on

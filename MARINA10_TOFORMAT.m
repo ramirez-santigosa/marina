@@ -8,17 +8,17 @@
 % Version of July, 2015. L. Ramírez; At CSIRO.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
-%  ..\DATA\(ANNUAL DIRECTORIES PER YEAR)
-%           monthly files form BSRN (1995-2014)
-%           (i.e.:'ASP_1995-01_0100.txt')
+% ..\DATA\(ANNUAL DIRECTORIES PER YEAR)
+%       monthly files form BSRN (1995-2014)
+%       (i.e.: 'ASP_1995-01_0100.txt')
 %
-% OUTPUTS:
-% ..\OUTPUTS\1_FORMAT\
-% (1)   One Matlab file per year: data  'ASP00-BOM-01-1995'
+% OUTPUT:
+% ..\OUTPUT\1_FORMAT\
+% (1)   One Matlab file per year: data  'ASP00-BOM-01-YYYY'
 %       Each file contains the structured variable 'data'
 % (2)   One Matlab file per year        'Summary1995'
-%           aaaa mmm GHI DNI DHI
-%           Values: -1 no file; 0 wrong file; column number in INPUT file
+%       aaaa mmm GHI DNI DHI
+%       Values: -1 no file; 0 wrong file; column number in INPUT file
 
 %% Data structure outline
 % data.filedata.own:        owner

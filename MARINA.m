@@ -20,7 +20,7 @@ MARINA10_TOFORMAT
 MARINA20_QC
 
 %% Module 3: Qualification and Gap Filling
-% MARINA30_VALIDATION
+MARINA30_VALIDATION
 
 %% Module 4: Candidates selection
 % MARINA40_CANDIDATES
