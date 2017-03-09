@@ -12,8 +12,17 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %   offset_empirical: Just in case the results seem to have timestamp mistakes
 %
 %   OUTPUT:
-%   astro: 10 columns vector
-%          [dj e0 ang_day et tst_hours w dec cosz i0 m]
+%   astro: 10 columns vector [dj e0 ang_day et tst_hours w dec cosz i0 m]
+%       dj: 
+%       e0: 
+%       ang_day: 
+%       et: 
+%       tst_hours: 
+%       w: 
+%       dec: 
+%       cosz: 
+%       i0: 
+%       m: 
 %   tst_num: 
 %   UTC_num: 
 %

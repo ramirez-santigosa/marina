@@ -78,9 +78,9 @@ for month = 1:12
             geodata.alt = geo.alt;
             
             % Add the monthly data and date to the previous ones
-            date_year(idx:idx+length(dates_vec)-1,:) = dates_vec;
-            data_year(idx:idx+length(data_month)-1,:) = data_month;
-            idx = idx+length(data_month); % Update index
+            date_year(idx:idx+size(dates_vec,1)-1,:) = dates_vec;
+            data_year(idx:idx+size(data_month,1)-1,:) = data_month;
+            idx = idx+size(data_month,1); % Update index
             
         else % Exist BUT the inside information is NOT ok
             sum_col(row_summary,:) = zeros(1,num_var);

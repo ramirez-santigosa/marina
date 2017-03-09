@@ -1,128 +1,132 @@
-function datosc = validation(datosc,level)
-% FUNCIÓN PARA LA VALIDACIÓN DE DATOS 
+function dataval = validation(dataqc,level,max_nonvalid)
+%VALIDATION Qualifies the data of a year after QC process. A daily and
+%monthly validation process are executed.
+%   INPUT:
+%   dataqc: Data structure after quality control process
+%   level: Defines since which flag value a day is valid according to the
+%   QC flags. See help QC function.
+%   max_nonvalid: Maximum number of allowed non valid days in a month in
+%   order to be considered a valid month.
 %
-% ENTRADA: datos en formato de salida del control de calidad
-% --------------------------------------------------------------------
-% datos.* añadiendo las matrices .matc y .astro:
-% datos.matc  = [AAAA MM DD HH MM SS GHIord eGHI DNIord eDNI DHIord eDHI];
-% datos.astro = [dj e0 ang_dia et tsv_horas w dec cosz i0 m];
+%   OUTPUT:
+%   dataval: Input data structure with 4 aditional fields
+%       dataval.daily: Saves daily radition values (Wh/m2) and the flags of
+%       the daily validation process. Columns:
+%       1 - # of the day in the month (Dia Juliano???)
+%       2 - Daily GHI (Wh/m2)
+%       3 - Flag daily GHI validation
+%       4 - # of the day in the month
+%       5 - Daily DNI (Wh/m2)
+%       6 - Flag daily DNI validation
+%       dataval.monthly: Saves monthly radiation values (kWh/m2) and the
+%       flags of the monthly validation process. Columns.
+%       1 - # month
+%       2 - Monthly GHI (kWh/m2). NaN if not valid
+%       3 - Flag of the monthly GHI
+%       4 - # month
+%       5 - Monthly DNI (kWh/m2). NaN if not valid
+%       6 - Flag of the monthly DNI
+%       dataval.replaced: Array with the replaced days along the year. Columns
+%       Year???
+%       1 - Month 
+%       2 - Origin day
+%       3 - Replaced day
+%       dataval.replaced_month: Array with the number of replacements in
+%       each month
 %
-% siendo eGHI la etiqueta del control de calidad de la variable GHI en
-% funcion de los procedimientos BSRN:
-%   0 no supera el nivel 1,    valor no físicamente posible
-%   1 no supera el nivel 2,    valor extremadaemente raro
-%   2 no supera el nivel 3,    las tres componentes no son coherentes o no
-%                              se puede comprobar
-%   3 valor coherente con las tres variables registradas
-%
-% SALIDA: FICHERO matlab con los datos validados
-%  
-%  Sheet validación diaria: una hoja con 6 columnas por año de datos:
-%      Los años son de 365 días.
-%      Col1: día juliano;	
-%      Col2: valor diario de radiación global  
-%      Col3: validez del día de global(1/0)
-%      Col4: día juliano;	
-%      Col5: valor diario de DNI 
-%      Col6: validez del día de DNI(1/0)
-%  Sheet validación mensual: una hoja con 6 columnas por año de datos:
-%      Los años son de 12 meses.
-%      Col1: mes;	
-%      Col2: valor mensual de radiación global (1 válido / 0 no válido) 
-%      Col3: validez del mes en global(1 válido / 0 no válido) 
-%      Col4: mes;	
-%      Col5: valor diario de DNI  (implícitamente 2 si válida/0)
-%      Col6: validez del día en global(1 válido / 0 no válido) 
-%
-%------------------------------------------------------------------
-lat = datosc.geodata.lat;
-num_obs = datosc.timedata.num_obs;
-%Nombre del fichero de salida
+% - F. Mendoza (February 2017) Update
 
-lat_rad=lat*pi/180;
+%% Start-up
+dataval = dataqc;
+lat = dataval.geodata.lat;
+lat_rad = lat*pi/180;
+num_obs = dataval.timedata.num_obs;
+year = dataval.mqc(1,1); % Get year from quality control structure
 
-% damos forma e inicializamos la salida de datos diarios validados
-% [dia GHI DNI val_dia] = 4 columnas cada año
-res_diaria(1:365,6) = NaN;
+%% Daily Validation
+if mod(year,4)~=0
+    leap = false; % Common year
+%     num_days = 365;
+elseif mod(year,100)~=0
+    leap = true; % Leap year
+%     num_days = 366;
+elseif mod(year,400)~=0
+    leap = false; % Common year
+%     num_days = 365;
+else
+    leap = true; % Leap year
+%     num_days = 366;
+end
+    
+% Pre-allocation of validated daily data. Results of the daily validation
+% process only include 365 days, February 29th of leap years is skipped.
+% [dj GHI flag_daily_validation_GHI dj DNI flag_daily_validation_DNI] => 6 columns per year
+res_daily = NaN(365,6); % Always 365!???
 
-%------------------------------------------------------------
-%lee el valor del año de la hoja de datos con calidad
-anno=datosc.matc(1,1);
-
-% VALIDACIÓN DIARIA-------------------------------
-num_dias = 365;        leap = 0;
-if mod(anno,4) == 0;   leap = 1; end
-
-for dj=1:365%num_dias
-    if (leap == true) && (dj>60)
-        num_dia=dj+1;
+for dj = 1:365
+    if leap && dj>59 % Skip February 29th of leap years
+        num_day = dj+1;
     else
-        num_dia=dj;
+        num_day = dj;
     end
-    %identificación de las líneas del día en los 8760*num_obs registros del año
-    lin_ini = ((num_dia-1)*24*num_obs)+1; % si dj=2 => lin_ini=25
-    lin_fin = lin_ini+(24*num_obs)-1;  % si dj=2 => lin_fin=48
-    %generamos una nueva variable "dia" del dia del mes que vamos a
-    %tratar
-    dia = datosc.matc(lin_ini,3);
+    
+    % Identification of the rows of each day according with the num_obs
+    lin_ini = (num_day-1)*24*num_obs+1;
+    lin_end = num_day*24*num_obs;
+    day = dataval.mqc(lin_ini,3); % Get number of the day in the month
 
-    %extracción de los valores diarios
-    hora = datosc.matc(lin_ini:lin_fin,4);
-    min  = datosc.matc(lin_ini:lin_fin,5);
-    GHI  = datosc.matc(lin_ini:lin_fin,7);
-    eGHI = datosc.matc(lin_ini:lin_fin,8);
-    DNI  = datosc.matc(lin_ini:lin_fin,9);
-    eDNI = datosc.matc(lin_ini:lin_fin,10);
+    % Extraction of the dayly values
+%     hour = dataval.mqc(lin_ini:lin_end,4);
+%     min  = dataval.mqc(lin_ini:lin_end,5);
+    GHI  = dataval.mqc(lin_ini:lin_end,7);
+    fGHI = dataval.mqc(lin_ini:lin_end,8);
+    DNI  = dataval.mqc(lin_ini:lin_end,9);
+    fDNI = dataval.mqc(lin_ini:lin_end,10);
 
-    % extraccion de los valores astronómicos de esas horas
-    w   = datosc.astro(lin_ini:lin_fin,6);%vector de  posiciones diatintas
-    dec = datosc.astro(lin_ini,7); %declinación del primer momento del día
-    ws  = acos(-tan(dec)*tan(lat_rad));%escalar
-    wp  = -ws; %escalar
-    i0  = datosc.astro(lin_ini:lin_fin,9); %vector de 24 posiciones diatintas
+    % Extraction of the astronomical values
+    w   = dataval.astro(lin_ini:lin_end,6); %!? Array of vector de  posiciones diatintas
+    dec = dataval.astro(lin_ini,7); % Declination of the first instant of the day
+    wsr  = acos(-tan(dec)*tan(lat_rad)); % Scalar
+    wss  = -wsr; % Scalar
+%     i0  = dataval.astro(lin_ini:lin_end,9); % 
 
-    % durante el día los ángulos horarios han de ser menores que el de
-    % salida (que es positivo) y mayores que le de puesta (negativo)
-    pos_dia = (w<ws & w>wp); %con el sol por encima del horizonte
+    % During daytime hourly angles are less than sunrise angle (which is
+    % positive) and greater than sunset angle (negative)
+    pos_day = (w<wsr & w>wss); % Sun above horizon line
 
-    %llamamos a la función valida_dias con los datos de cada variable
-    [serieG,etihG,diariaG,etidG] = ...
-        valida_dias(pos_dia,GHI,eGHI,num_obs,level,dj);
-    [serieB,etihB,diariaB,etidB] = ...
-        valida_dias(pos_dia,DNI,eDNI,num_obs,level,dj);
+    % valida_days function tests the validity of each day for each variable.
+    % A day is valid if has less than an hour of abnormal data.
+    [seriesG,flagG,dailyG,flagdG] = valida_days(pos_day,GHI,fGHI,num_obs,level);
+    [seriesB,flagB,dailyB,flagdB] = valida_days(pos_day,DNI,fDNI,num_obs,level);
 
-    %actualiza los datos por si se ha interpolado
-    datosc.matc(lin_ini:lin_fin,7) = serieG;
-    datosc.matc(lin_ini:lin_fin,8) = etihG;
-    datosc.matc(lin_ini:lin_fin,9) = serieB;
-    datosc.matc(lin_ini:lin_fin,10)= etihB;
+    % Updating data in case of interpolation in valida_days
+    dataval.mqc(lin_ini:lin_end,7) = seriesG; % GHI
+    dataval.mqc(lin_ini:lin_end,8) = flagG; % Flag QC GHI
+    dataval.mqc(lin_ini:lin_end,9) = seriesB; % DNI
+    dataval.mqc(lin_ini:lin_end,10)= flagB; % Flag DNI
 
-    % Almacena los resultados en una tabla de resultados diarios 
-    %   - columnas: 6 : [dj GHI val_GHI dj DNI val_DNI]
-    res_diaria(dj,1)=dia;     
-    res_diaria(dj,2)=diariaG;   
-    res_diaria(dj,3)=etidG; 
-    res_diaria(dj,4)=dia;     
-    res_diaria(dj,5)=diariaB;  
-    res_diaria(dj,6)=etidB;  
-
+    % Results are saved in a table of daily validation
+    res_daily(dj,1) = day; % Number of the day in the month
+    res_daily(dj,2) = dailyG; % Value of the daily GHI (Wh/m2)
+    res_daily(dj,3) = flagdG; % Flag of the daily GHI validation process
+    res_daily(dj,4) = day; % Number of the day in the month
+    res_daily(dj,5) = dailyB; % Value of the daily DNI (Wh/m2)
+    res_daily(dj,6) = flagdB; % Flag of the daily DNI validation process
 end
 
-% VALIDACIÓN MENSUAL ------------------------
-% Se parte de los resultados de la validación diaria para cada año
-% LA VALIDACIÓN MENSUAL NO SE PUEDE HACER EN DOS VARIABLES
-% En el proceso de sustituyen días, por Lo que solo puede mandar una: la
-% global o la directa, pero la salida es de las dos.
-% Dado que tanto el 5.1 como el 5.2 son pasos en
-% los que se exige la DNI, va a ser la que dirija el proceso.
+%% Monthly validation
+% In the monthly validation, a main variable must be chosen in order to lead
+% the process of nonvalid days replacement. Replacements affect all
+% variables according to the main variable. Currently, DNI is the main
+% variable in 'valida_months' function.
 
-% Validación mensual: entra la salida de la validación diaria
-% 4 = huecos diarios máximos permitidos cada mes.
-[diarios,mensuales,cambios,cambios_mes]=valida_meses(res_diaria,4);
-%Actualiza los resultados de los cambios de días si necesario 
-% en la matriz diaria
+% valida_months function tests the validity of each month for each variable
+% on the basis of the daily validation results. A month is valid if has as
+% much as 4 non valid days.
+[daily,monthly,replaced,replaced_month] = valida_months(res_daily,max_nonvalid);
 
-datosc.diarios     = diarios;
-datosc.mensuales   = mensuales;
-datosc.cambios     = cambios;
-datosc.cambios_mes = cambios_mes;
+dataval.daily = daily; % Update daily values if replacements were made
+dataval.monthly = monthly; % Saves monthly validation results
+dataval.replaced = replaced; % Array with the replaced days in the year
+dataval.replaced_month = replaced_month; % Number of replacements in each month
+end

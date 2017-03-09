@@ -15,19 +15,20 @@ function [dataqc] = QC(path_fig,data,var,max_rad,cols,tzone,name,offset_empirica
 %
 %   OUTPUT:
 %   dataqc: Standard data structure with two additional matrices: .mqc and .astro
-%       data.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI];
-%       data.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m];
+%       data.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI]
+%       data.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
 %   fXXX are arrays with the QC flags of the variable XXX according with
 %   BSRN procedurement:
 %   0 Fail to pass 1st test: Physically Possible Limits
 %   1 Fail to pass 2nd test: Extremely Rare Limits
 %   2 Fail to pass 3rd test: Comparisons and coherence between variables
-%   3 Pass all tests, data is valid
+%   3 Pass all tests, data is valid ???
+%   4 !???
 %
 % - L. Ramírez (April 2013)
 % - S. Moreno  (June 2014)
 % - L. Zarzalejo, L Ramírez (May 2015)
-% - F. Mendoza (February 2017)
+% - F. Mendoza (February 2017) Update
 
 %% Constants
 Micolormap = [1     0.2     0.2;...
@@ -247,7 +248,8 @@ fDNI(test3) = 3;
 clearvars test32 high low
 
 %% NEW TEST #4: Some impossible were slipping through ---------------------
-test4 = ((GHIord+50>GHIcalc & GHIord-50<GHIcalc) & test3);
+% GHI values between GHI calculated +- 50
+test4 = ((GHIord>GHIcalc-50 & GHIord<GHIcalc+50) & test3);
 fGHI(test4) = 4;
 fDNI(test4) = 4;
 fDHI(test4) = 4;

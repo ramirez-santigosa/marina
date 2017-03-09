@@ -7,18 +7,18 @@
 % MODULE 3: VALIDATION (Days and months valids)
 % Version of July, 2015. L. Ramírez; At CSIRO.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INPUT: 
+% INPUT:
 % ..\OUTPUT\2_QC
-%       One matlab file per year: datosc   'ASP00-BOM-01-1995_QC' 
-%       Each file contains the structured variable   'datosc'
-%       Same as "datos" but adding two more variables,
-%           (records are sorted and a the year is full)
-%  (1)  datos.matc  = [fecha_vec(:,1:6)(TSV)/ GHIord eGHI DNIord eDNI DHIord eDHI];
-%  (2)  datos.astro = [dj e0 ang_dia et tsv_horas w dec cosz i0 m];
+%       One Matlab file per year: dataqc  'ASP00-BOM-01-YYYY_QC'
+%       Each file contains the structured variable  'dataqc'
+%       Same as "data" but adding two more variables
+%       (records are sorted and a the year is full)
+%  (1)  data.mqc  = [date_vec(:,1:6)(TST) GHIord eGHI DNIord eDNI DHIord eDHI];
+%  (2)  datos.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m];
 %
-% OUTPUTS: 
+% OUTPUT: !!!
 % ..\OUTPUT\3_VALIDATION
-% (1)   One matlab file per year: datosval 'ASP00-BOM-01-1995_VAL' 
+% (1)   One Matlab file per year: dataval 'ASP00-BOM-01-YYYY_VAL' 
 %       Each file contains the structured variable   'datosc'
 %       Same as "datosc" but adding four more variables,
 %      (1) diarios      365 X 6 columns by year (DAY   GHI VAL DAY   DNI VAL)
@@ -33,124 +33,123 @@
 %              sheet Tabla-FALTAN
 %              sheet cambiados
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clear
-clc
-close all
-run('Configuration_BURNS.m');
 
-[s,mess,messid] = mkdir(ruta_val);
+close, clearvars, %clc
+run('Configuration_BSRN_ASP.m');
 
-% Initializin results
-res_diaria =[]; res_mes   = []; cambiados    = []; 
-% cabeceras de la validación diaria/mensual/tablas mensuales
-headerd   = []; headerm   = []; header_annos = [];
-%inicialización Tablas salida validacíon
-Tabla_FALTAN = []; Tabla_GHI = []; Tabla_DNI = [];
+if ~exist(path_val,'dir')
+    [s,mess,messid] = mkdir(path_val);
+end
 
+max_nonvalid = 4; % Maximum number of allowed non valid days in a month
+% Preallocation variables for Excel export
+colD = 6; res_daily_ex = zeros(365,(year_end-year_ini+1)*colD);
+colM = 6; res_month_ex = zeros(12,(year_end-year_ini+1)*colM);
+replaced_ex = zeros((year_end-year_ini+1)*12*max_nonvalid,4); idxR = 1;
 
+% Preallocation monthly validation output tables
+Table_missing = zeros(12,year_end-year_ini+1);
+Table_GHI = zeros(12,year_end-year_ini+1);
+Table_DNI = zeros(12,year_end-year_ini+1);
 
-for anno = anno_ini:anno_end
-    anno_str     = num2str(anno);
+% Level for validation. Defines since which flag value a day is valid according to the QC flags
+level = 1;
 
-    disp(sprintf('Validation of %s year %s',name,anno_str)); 
-    cambios_anno = [];
+for y = year_ini:year_end
     
+    year_str = num2str(y);
+    fprintf('Validation of %s year %s\n',name,year_str); 
+    changes_year = [];
     
-    name     = [filedata.loc '00-' filedata.own '-' filedata.num];
-    name_out = [name '-' anno_str];
+    namef = [loc '00-' owner_station '-' num];
+    name_out = [namef '-' year_str];
     name_out_QC  = [name_out '_QC'];
     name_out_VAL = [name_out '_VAL'];
 
-    load(strcat(ruta_qc,'\',name_out_QC));
+    load(strcat(path_qc,'\',name_out_QC));
     
-    datosval = validation(datosc,level);
+    dataval = validation(dataqc,level,max_nonvalid); % Daily and Monthly validation
+    save(strcat(path_val,'\',name_out_VAL),'dataval'); % Save structure
+    
+    % Save of validation results for Excel recording
+    idx = y-year_ini;
+    res_daily_ex(:,idx*colD+1:(idx+1)*colD) = dataval.daily;
+    res_month_ex(:,idx*colM+1:(idx+1)*colM) = dataval.monthly;
 
-    save(strcat(ruta_val,'\',name_out_VAL),'datosval');
-
-    % save de validation results for excel recording
-    res_diaria = [res_diaria datosval.diarios];
-    res_mes    = [res_mes    datosval.mensuales];
+    replace = [ones(size(dataval.replaced,1),1)*y, dataval.replaced];
+    replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
+    idxR = idxR+length(replace);
     
-    Tabla_FALTAN = [Tabla_FALTAN datosval.cambios_mes(:,1)];
-    Tabla_GHI    = [Tabla_GHI datosval.mensuales(:,2)];
-    Tabla_DNI    = [Tabla_DNI datosval.mensuales(:,5)];
-
-    cambios = datosval.cambios;
-    
-    % creamos cambios_anno, que tiene la columna del valor del año
-    if ~isnan(cambios)
-        cambios_anno(:,2:4) = cambios;
-        cambios_anno(:,1) = anno;
-        cambiados = [cambiados;cambios_anno];
-    end
-end    
-    
-% WRITTING IN THE SHEETS OUTPUTS FOF THE VALIDATION
-%------------------------------------------------------------------------
-if isempty(cambiados)
-    cambiados='####';
+    Table_missing(:,idx+1) = dataval.replaced_month(:,1);
+    Table_GHI(:,idx+1) = dataval.monthly(:,2);
+    Table_DNI(:,idx+1) = dataval.monthly(:,5);
 end
 
-% Formatting headers
-for i=1:num_annos
-    anno=anno_ini+i-1;
-    anno_str=num2str(anno);
+replaced_ex(idxR:end,:) = []; % Shrink
+
+%% Headers for Excel Valiation Report
+
+% Headers of dayly/monthly/yearly validation
+headerD = cell(1,(year_end-year_ini+1)*colD);
+headerM = cell(1,(year_end-year_ini+1)*colM);
+headerY = year_ini:year_end;
+
+for y = year_ini:year_end
     
-    % Header of daily validation
-    cab_d(1,:)=[anno_str '_dia'];
-    cab_d(2,:)=[anno_str '_GHI'];
-    cab_d(3,:)=[anno_str '_eGI'];
-    cab_d(4,:)=[anno_str '_dia'];
-    cab_d(5,:)=[anno_str '_DNI'];
-    cab_d(6,:)=[anno_str '_eDI'];
-    cab_d_anno={cab_d(1,:),cab_d(2,:),cab_d(3,:),cab_d(4,:),cab_d(5,:),cab_d(6,:)};
-    headerd=[headerd,cab_d_anno];
+    year_str = num2str(y);
+    idx = y-year_ini;
+    
+    % Headers of daily validation
+    headerD{1,idx*colD+1} = [year_str ' day'];
+    headerD{1,idx*colD+2} = [year_str ' GHI (Wh/m2)'];
+    headerD{1,idx*colD+3} = [year_str ' fdvGHI'];
+    headerD{1,idx*colD+4} = [year_str ' day'];
+    headerD{1,idx*colD+5} = [year_str ' DNI (Wh/m2)'];
+    headerD{1,idx*colD+6} = [year_str ' fdvDNI'];
 
     % Header of monthly validation
-    cab_m(1,:)=[anno_str '_mes'];
-    cab_m(2,:)=[anno_str '_GHI'];
-    cab_m(3,:)=[anno_str '_eGI'];
-    cab_m(4,:)=[anno_str '_mes'];
-    cab_m(5,:)=[anno_str '_DNI'];
-    cab_m(6,:)=[anno_str '_eDI'];
-    cab_m_anno={cab_m(1,:),cab_m(2,:),cab_m(3,:),cab_m(4,:),cab_m(5,:),cab_m(6,:)};
-    headerm=[headerm,cab_m_anno];
-    
-    header_annos=[header_annos,anno]; 
-    
+    headerM{1,idx*colM+1} = [year_str ' month'];
+    headerM{1,idx*colM+2} = [year_str ' GHI (kWh/m2)'];
+    headerM{1,idx*colM+3} = [year_str ' fmvGHI'];
+    headerM{1,idx*colM+4} = [year_str ' month'];
+    headerM{1,idx*colM+5} = [year_str ' DNI (kWh/m2)'];
+    headerM{1,idx*colM+6} = [year_str ' fmvDNI'];
+       
 end
 
-% Name of the output EXCEL file 
-file_xls=strcat(ruta_val,'\',name,'.xlsx');
+hReplaced = {'Year','Month','Origin day','Replaced day'}; % Headers replaced days
 
-% Switch of warning of new excel sheet.
+%% Writing Validation Report in Excel
+
+if isempty(replaced_ex)
+    replaced_ex='####';
+end
+
+file_xls = strcat(path_val,'\',namef,'.xlsx');
+
+% Switch off warning of new excel sheet.
 warning off MATLAB:xlswrite:AddSheet
 
-% Process information
-disp(sprintf('Writting in the file %s ',name)); 
+fprintf('Writing Excel file %s \n',namef);
 
-% DAILY VALIDATION RESULTS
-% -----------------------------------------------------------------------
-% write the header
-xlswrite(file_xls, headerd,          'Val-dia','A1');
-% Write the results
-xlswrite(file_xls, round(res_diaria),'Val-dia','A2');
-% MONTHLY VALIDATION RESULTS
-%---------------------------------------------------------------------
-% write the header
-xlswrite(file_xls, headerm,          'Val-mes', 'A1');
-% Write the results
-xlswrite(file_xls, round(res_mes),   'Val-mes', 'A2');
+% DAILY VALIDATION RESULTS ------------------------------------------------
+xlswrite(file_xls,headerD,'Val_Day','A1'); % Write the headers
+xlswrite(file_xls,round(res_daily_ex),'Val_Day','A2'); % Write the results
 
-% Write the final tables  
-xlswrite(file_xls, header_annos,     'Tabla-GHI', 'A1');
-xlswrite(file_xls, round(Tabla_GHI), 'Tabla-GHI', 'A2');
+% MONTHLY VALIDATION RESULTS ----------------------------------------------
+xlswrite(file_xls,headerM,'Val_Month','A1'); % Write the headers
+xlswrite(file_xls,round(res_month_ex),'Val_Month','A2'); % Write the results
 
-xlswrite(file_xls, header_annos,     'Tabla-DNI', 'A1');
-xlswrite(file_xls, round(Tabla_DNI), 'Tabla-DNI', 'A2');
+% MONTHLY GHI & DNI RESULTS AFTER VALIDATION ------------------------------
+xlswrite(file_xls,headerY,'GHI', 'A1'); % Write the headers
+xlswrite(file_xls,round(Table_GHI),'GHI','A2'); % Write the results
 
-xlswrite(file_xls, header_annos,        'Tabla-faltan', 'A1');
-xlswrite(file_xls, round(Tabla_FALTAN), 'Tabla-faltan', 'A2');
+xlswrite(file_xls,headerY,'DNI','A1'); % Write the headers
+xlswrite(file_xls,round(Table_DNI),'DNI','A2'); % Write the results
 
-xlswrite(file_xls, {'año','mes','dia_ini','dia_fin'},'Cambiados','A1');
-xlswrite(file_xls, cambiados,                        'Cambiados','A2');
+% NUMBER OF REPLACEMENTS AND REPLACED DAYS PER MONTH AND YEAR -------------
+xlswrite(file_xls,headerY,'#_Replace','A1');
+xlswrite(file_xls,round(Table_missing),'#_Replace','A2');
+
+xlswrite(file_xls,hReplaced,'Replaced','A1');
+xlswrite(file_xls,replaced_ex,'Replaced','A2');

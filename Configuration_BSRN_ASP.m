@@ -41,4 +41,3 @@ path_val = '..\OUTPUT\3_VALIDATION';
 path_cases = '..\OUTPUT\4_CASES';
 path_tmy = '..\OUTPUT\5_TMY';
 path_trans = '..\OUTPUT\6_TRANS';
-%! num_days_month = [31 28 31 30 31 30 31 31 30 31 30 31];
