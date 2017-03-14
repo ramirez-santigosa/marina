@@ -6,6 +6,7 @@
 %
 % MODULE 4: CANDIDATES FOR THE TMY GENERATION BASED IN FDA DISTANCES
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS
 % ..\OUTPUT\3_VALIDATION
