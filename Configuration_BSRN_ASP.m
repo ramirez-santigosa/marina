@@ -6,14 +6,15 @@
 %
 % CONFIGURATION OF VARIABLES
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% CONFIGURATION OF VARIABLES FOR THE THREATMENT OF
+% CONFIGURATION OF VARIABLES FOR THE TREATMENT OF
 % BSRN SOLAR RADIATION DATA
 % CASE: ALICE SPRING
 % INPUT INFORMATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Input data
-
 % Specific years of threatment
 year_ini = 1995; % Initial year of data
 year_end = 2014; % Final year of data. Use the same initial year in case of 1 year

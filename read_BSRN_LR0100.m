@@ -1,4 +1,4 @@
-function [ok,ID, geo, dates, data, col] = read_BSRN_LR0100(filename)
+function [ok,ID,geo,dates,data,col] = read_BSRN_LR0100(filename)
 %READ_BSRN_LR0100 Reads the monthly files containing the BSRN LR0100
 %   INPUT:
 %   filename: Name of the file with the whole path.
@@ -19,7 +19,7 @@ function [ok,ID, geo, dates, data, col] = read_BSRN_LR0100(filename)
 %        col.LWD: LWD column position
 %
 % - L. Ramírez (May 2015)
-% - F. Mendoza (February 2017)
+% - F. Mendoza (February 2017) Update
 
 % Open an ASCII file delimited by tabs with 1 headers line
 my_data = importdata(filename,'\t', 1);

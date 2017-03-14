@@ -6,6 +6,7 @@
 %
 % MODULE 1: TOFORMAT
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\DATA\(ANNUAL DIRECTORIES PER YEAR)
@@ -14,11 +15,12 @@
 %
 % OUTPUT:
 % ..\OUTPUT\1_FORMAT\
-% (1)   One Matlab file per year: data  'ASP00-BOM-01-YYYY'
+% (1)   One Matlab file per year: data i.e. 'ASP00-BOM-01-YYYY'
 %       Each file contains the structured variable 'data'
-% (2)   One Matlab file per year        'Summary1995'
+% (2)   One Matlab file per year i.e. 'SummaryYYYY'
 %       aaaa mmm GHI DNI DHI
-%       Values: -1 no file; 0 wrong file; column number in INPUT file
+%       Values: -1 no file; 0 wrong file; column number in the INPUT file
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Data structure outline
 % data.filedata.own:        owner
@@ -39,7 +41,6 @@
 
 %% Data assignment
 
-%! num_years = year_end-year_ini+1;
 filedata.own = owner_station;
 filedata.loc = loc;
 filedata.name = name;

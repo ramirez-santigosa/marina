@@ -15,8 +15,8 @@ function [dataqc] = QC(path_fig,data,var,max_rad,cols,tzone,name,offset_empirica
 %
 %   OUTPUT:
 %   dataqc: Standard data structure with two additional matrices: .mqc and .astro
-%       data.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI]
-%       data.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
+%       dataqc.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI]
+%       dataqc.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
 %   fXXX are arrays with the QC flags of the variable XXX according with
 %   BSRN procedurement:
 %   0 Fail to pass 1st test: Physically Possible Limits
@@ -51,6 +51,15 @@ year = data.mat(floor(length(input)/2),1); % Avoiding the first rows
 file_name = [name,' ',num2str(year)]; % For figures title
 lat_rad = lat*pi/180; % Latitude in radians
 
+if ~isnan(nodata)% Position of no data values in the input matrix, if different of NaN
+    pos_nodata = input==nodata;
+    input(pos_nodata) = NaN; % Assign Not-a-number to no data (default)
+end
+
+GHI = input(:,cols.GHI); % Variables arrays
+DNI = input(:,cols.DNI);
+DHI = input(:,cols.DHI);
+
 %% Assessing the hours jump needed in the time data
 off = str2double(time(4:end)); % Offset of the input data
 jumpH = tzone - off; % Shift between the time zone of the station and the time reference of the input data
@@ -60,15 +69,6 @@ if tzone >= 0 % String with the time zone of the station
 else
     timeZ = strcat('UTC-',num2str(tzone));
 end
-
-if ~isnan(nodata)% Position of no data values in the input matrix, if different of NaN
-    pos_nodata = input==nodata;
-    input(pos_nodata) = NaN; % Assign Not-a-number to no data (default)
-end
-
-GHI = input(:,cols.GHI); % Variables arrays
-DNI = input(:,cols.DNI);
-DHI = input(:,cols.DHI);
 
 %% Input time reference to station local time (now data stars in the previous year!?)
 date_vec = input(:,cols.date);
@@ -133,13 +133,13 @@ DHIord(pos_obs_INI) = DHI; % In the station time zone
 [astro,tst_num,~] = calcula_astro...
     (days_num_ord,stamp,num_obs,timeZ,lat,lon,offset_empirical); % Function
 
-dj = astro(:,1);
+dj = astro(:,1); % Julian day
 e0 = astro(:,2); % Sun-Earth distance correction factor
 % ang_day = astro(:,3);
 % et = astro(:,4);
 % tst_hours = astro(:,5);
-w = astro(:,6);
-dec = astro(:,7);
+w = astro(:,6); % Hour angle
+dec = astro(:,7); % Declination of the Sun
 cosz = astro(:,8); % Cosine of the solar zenith angle.
 % i0 = astro(:,9);
 % m = astro(:,10);
@@ -329,7 +329,7 @@ end
 
 %% ANNUAL QUALITY MAPS
 
-% Trick for all graphs have the 5 different values
+% Trick for all graphs to have the 5 different values
 % fGHI(1)=-1; fGHI(2)=0; fGHI(3)=1; fGHI(4)=2; fGHI(5)=3;
 % fDNI(1)=-1; fDNI(2)=0; fDNI(3)=1; fDNI(4)=2; fDNI(5)=3;
 % fDHI(1)=-1; fDHI(2)=0; fDHI(3)=1; fDHI(4)=2; fDHI(5)=3;

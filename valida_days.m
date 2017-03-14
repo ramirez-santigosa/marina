@@ -41,7 +41,7 @@ bads = pos_day & ~valids;
 %% Day validation and gap filling (interpolation)
 if sum(bads)==0 % Not bad at all
     daily = round(sum(dat(pos_day)))/num_obs; % W/m2 per hour
-    f_val = 1;
+    f_val = 1; % Valid day
 elseif sum(bads) <= num_obs % Less than one not valid hour in the day (Interpolation)
     secuence_day = (1:24*num_obs)';
     dat(bads) = interp1(secuence_day(valids),dat(valids),secuence_day(bads)); % 1-D interpolation (table lookup)

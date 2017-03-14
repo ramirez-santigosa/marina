@@ -1,14 +1,14 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MARINA (Multi annual radiation information approach)
 % A TOOL FOR SOLAR RADIATION SERIES GENERATION
-%   Author: L. Ramirez, ...
-%   Update: Feb 7, 2017
+%   Author: L. Ramirez, ..., F. Mendoza
+%   Update: 2017
 %   E-mail: ...
 %   Web-site:  ...
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%
 % This is the main file of this toolbox. Each one of the modules is
 % executed from it, according with a configuration file.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Configuration file
 Configuration_BSRN_ASP

@@ -6,32 +6,35 @@
 %
 % MODULE 3: VALIDATION (Days and months valids)
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\2_QC
-%       One Matlab file per year: dataqc  'ASP00-BOM-01-YYYY_QC'
-%       Each file contains the structured variable  'dataqc'
-%       Same as "data" but adding two more variables
-%       (records are sorted and a the year is full)
-%  (1)  data.mqc  = [date_vec(:,1:6)(TST) GHIord eGHI DNIord eDNI DHIord eDHI];
-%  (2)  datos.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m];
+%       One Matlab file per year: dataqc i.e. 'ASP00-BOM-01-YYYY_QC'
+%       Each file contains the structured variable 'dataqc'
 %
-% OUTPUT: !!!
+% OUTPUT:
 % ..\OUTPUT\3_VALIDATION
-% (1)   One Matlab file per year: dataval 'ASP00-BOM-01-YYYY_VAL' 
-%       Each file contains the structured variable   'datosc'
-%       Same as "datosc" but adding four more variables,
-%      (1) diarios      365 X 6 columns by year (DAY   GHI VAL DAY   DNI VAL)
-%      (2) mensuales    12  X 6 columns by year (month GHI VAL month DNI VAL)
-%      (3) cambios      description of the changes of the year
-%      (4) cambios_mes  number of not valid or changed days by month
-% (2)   output EXCEL file:
-%              sheet Val-dia
-%              sheet Val-mes
-%              sheet Tabla-GHI
-%              sheet Tabla-DNI
-%              sheet Tabla-FALTAN
-%              sheet cambiados
+%       One Matlab file per year: dataval i.e. 'ASP00-BOM-01-YYYY_VAL'
+%       Each file contains the structured variable 'dataval'
+%       Same as "dataqc" but adding four fields
+%  (1)  dataval.daily = Daily radiation values (Wh/m2) and the daily
+%       validation process flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
+%  (2)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
+%       validation process flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
+%  (3)  dataval.replaced = Array with the replaced days along the years
+%  (4)  dataval.replaced_month = Array with the number of replacements in
+%       each month.
+%
+%       One Excel file with all years validation results:
+%  (1)  Sheet Val_Day: Results of the daily validation of all years
+%  (2)  Sheet Val_Month: Results of the monthly validation of all years
+%  (3)  Sheet GHI: Summary of the monthly GHI values (kWh/m2) of each year
+%  (4)  Sheet DNI: Summary of the monthly DNI values (kWh/m2) of each year
+%  (5)  Sheet #_Replace: Summary of the number of replacements made in each
+%       month and year
+%  (6)  Sheet Replaced: Summary of the replaced days pointing out the
+%       origin day and the replaced day
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close, clearvars, %clc
@@ -58,24 +61,24 @@ level = 1;
 for y = year_ini:year_end
     
     year_str = num2str(y);
-    fprintf('Validation of %s year %s\n',name,year_str); 
+    fprintf('Validation of %s year %s\n',name,year_str);
     changes_year = [];
     
     namef = [loc '00-' owner_station '-' num];
     name_out = [namef '-' year_str];
     name_out_QC  = [name_out '_QC'];
     name_out_VAL = [name_out '_VAL'];
-
+    
     load(strcat(path_qc,'\',name_out_QC));
     
-    dataval = validation(dataqc,level,max_nonvalid); % Daily and Monthly validation
+    dataval = validation(dataqc,level,max_nonvalid); % Function Daily and Monthly validation
     save(strcat(path_val,'\',name_out_VAL),'dataval'); % Save structure
     
     % Save of validation results for Excel recording
     idx = y-year_ini;
     res_daily_ex(:,idx*colD+1:(idx+1)*colD) = dataval.daily;
     res_month_ex(:,idx*colM+1:(idx+1)*colM) = dataval.monthly;
-
+    
     replace = [ones(size(dataval.replaced,1),1)*y, dataval.replaced];
     replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
     idxR = idxR+length(replace);
@@ -106,7 +109,7 @@ for y = year_ini:year_end
     headerD{1,idx*colD+4} = [year_str ' day'];
     headerD{1,idx*colD+5} = [year_str ' DNI (Wh/m2)'];
     headerD{1,idx*colD+6} = [year_str ' fdvDNI'];
-
+    
     % Header of monthly validation
     headerM{1,idx*colM+1} = [year_str ' month'];
     headerM{1,idx*colM+2} = [year_str ' GHI (kWh/m2)'];
@@ -114,7 +117,7 @@ for y = year_ini:year_end
     headerM{1,idx*colM+4} = [year_str ' month'];
     headerM{1,idx*colM+5} = [year_str ' DNI (kWh/m2)'];
     headerM{1,idx*colM+6} = [year_str ' fmvDNI'];
-       
+    
 end
 
 hReplaced = {'Year','Month','Origin day','Replaced day'}; % Headers replaced days

@@ -21,12 +21,11 @@ function [daily,monthly,replaced,replaced_month] = valida_months(input_daily,max
 %   monthly: Results of the monthly validation of a specific year. Columns:
 %       1 - # month
 %       2 - Monthly GHI (kWh/m2). NaN if not valid
-%       3 - Flag of the monthly GHI
+%       3 - Flag monthly GHI validation
 %       4 - # month
 %       5 - Monthly DNI (kWh/m2). NaN if not valid
-%       6 - Flag of the monthly DNI
-%   replaced: Replacements in a year. Columns
-%       Year???
+%       6 - Flag monthly DNI validation
+%   replaced: Replacements in a year. Columns:
 %       1 - Month 
 %       2 - Origin day
 %       3 - Replaced day

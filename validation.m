@@ -10,7 +10,7 @@ function dataval = validation(dataqc,level,max_nonvalid)
 %
 %   OUTPUT:
 %   dataval: Input data structure with 4 aditional fields
-%       dataval.daily: Saves daily radition values (Wh/m2) and the flags of
+%       dataval.daily: Saves daily radiation values (Wh/m2) and the flags of
 %       the daily validation process. Columns:
 %       1 - # of the day in the month (Dia Juliano???)
 %       2 - Daily GHI (Wh/m2)
@@ -19,16 +19,15 @@ function dataval = validation(dataqc,level,max_nonvalid)
 %       5 - Daily DNI (Wh/m2)
 %       6 - Flag daily DNI validation
 %       dataval.monthly: Saves monthly radiation values (kWh/m2) and the
-%       flags of the monthly validation process. Columns.
+%       flags of the monthly validation process. Columns:
 %       1 - # month
 %       2 - Monthly GHI (kWh/m2). NaN if not valid
 %       3 - Flag of the monthly GHI
 %       4 - # month
 %       5 - Monthly DNI (kWh/m2). NaN if not valid
 %       6 - Flag of the monthly DNI
-%       dataval.replaced: Array with the replaced days along the year. Columns
-%       Year???
-%       1 - Month 
+%       dataval.replaced: Array with the replaced days along the year. Columns:
+%       1 - Month
 %       2 - Origin day
 %       3 - Replaced day
 %       dataval.replaced_month: Array with the number of replacements in
@@ -46,16 +45,12 @@ year = dataval.mqc(1,1); % Get year from quality control structure
 %% Daily Validation
 if mod(year,4)~=0
     leap = false; % Common year
-%     num_days = 365;
 elseif mod(year,100)~=0
     leap = true; % Leap year
-%     num_days = 366;
 elseif mod(year,400)~=0
     leap = false; % Common year
-%     num_days = 365;
 else
     leap = true; % Leap year
-%     num_days = 366;
 end
     
 % Pre-allocation of validated daily data. Results of the daily validation
@@ -84,7 +79,7 @@ for dj = 1:365
     fDNI = dataval.mqc(lin_ini:lin_end,10);
 
     % Extraction of the astronomical values
-    w   = dataval.astro(lin_ini:lin_end,6); %!? Array of vector de  posiciones diatintas
+    w   = dataval.astro(lin_ini:lin_end,6); % Array of Hour angle along the day
     dec = dataval.astro(lin_ini,7); % Declination of the first instant of the day
     wsr  = acos(-tan(dec)*tan(lat_rad)); % Scalar
     wss  = -wsr; % Scalar
@@ -94,7 +89,7 @@ for dj = 1:365
     % positive) and greater than sunset angle (negative)
     pos_day = (w<wsr & w>wss); % Sun above horizon line
 
-    % valida_days function tests the validity of each day for each variable.
+    % valida_days Function tests the validity of each day for each variable.
     % A day is valid if has less than an hour of abnormal data.
     [seriesG,flagG,dailyG,flagdG] = valida_days(pos_day,GHI,fGHI,num_obs,level);
     [seriesB,flagB,dailyB,flagdB] = valida_days(pos_day,DNI,fDNI,num_obs,level);
@@ -120,7 +115,7 @@ end
 % variables according to the main variable. Currently, DNI is the main
 % variable in 'valida_months' function.
 
-% valida_months function tests the validity of each month for each variable
+% valida_months Function tests the validity of each month for each variable
 % on the basis of the daily validation results. A month is valid if has as
 % much as 4 non valid days.
 [daily,monthly,replaced,replaced_month] = valida_months(res_daily,max_nonvalid);

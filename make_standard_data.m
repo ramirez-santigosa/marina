@@ -61,7 +61,7 @@ data.nodata   = nodata;
 data.header   = header;
 
 matrix = double([dates GHI DNI DHI others]);
-matrix(isnan(matrix(:,1)),:) = []; % Not available data is discarded !!Preguntar columna 1?
+matrix(isnan(matrix(:,1)),:) = []; % Not available data is discarded !!Preguntar porque columna 1?
 % hay    = ~isnan(data.mat(:,1));
 % datos2 = data;
 % datos2.mat = [];

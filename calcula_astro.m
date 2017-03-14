@@ -13,14 +13,14 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %
 %   OUTPUT:
 %   astro: 10 columns vector [dj e0 ang_day et tst_hours w dec cosz i0 m]
-%       dj: 
-%       e0: 
-%       ang_day: 
-%       et: 
+%       dj: Julian day (ordinal day) !???
+%       e0: Sun-Earth distance correction factor
+%       ang_day: Day angle
+%       et: Equation of time
 %       tst_hours: 
-%       w: 
-%       dec: 
-%       cosz: 
+%       w: Hour angle [radians]
+%       dec: Declination of the Sun
+%       cosz: Cosine of the solar zenith angle
 %       i0: 
 %       m: 
 %   tst_num: 
@@ -75,10 +75,10 @@ end
 tst_num = date_num_center+time_corr-(off/24)+offset_empirical/24;
 
 tst_hours = (tst_num-floor(tst_num))*24; % Hours (decimals)
-w = (12-tst_hours)*15*pi/180; % 
+w = (12-tst_hours)*15*pi/180; % Hour angle [radians]
 dec = 0.006918-0.399912*cos(ang_day)+0.070257*sin(ang_day)...
       -0.006758*cos(2*ang_day)+0.000907*sin(2*ang_day)...
-      -0.002697*cos(3*ang_day)+0.00148*sin(3*ang_day); %
+      -0.002697*cos(3*ang_day)+0.00148*sin(3*ang_day); % Declination of the Sun
 cosz = sin(dec).*sin(lat_rad)+cos(dec).*cos(lat_rad).*cos(w); % Cosine of the solar zenith angle
 
 i0 = Isc.*e0.*cosz; % 

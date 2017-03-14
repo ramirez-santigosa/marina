@@ -41,8 +41,7 @@ for month = 1:12
     
     filename = strcat(filedata.loc,'_',yyyy,'-',mm,'_0100.txt');
     disp(['Reading file: ' filename]);
-    % Name of the file with path
-    file_id = strcat(path_in,'\',yyyy,'\',filename);
+    file_id = strcat(path_in,'\',yyyy,'\',filename); % Name of the file with path
     
     % Test if file exist
     fid = fopen(file_id);
@@ -72,7 +71,7 @@ for month = 1:12
             if ~isnan(col.DHI)
                 data_month(:,3) = info(:,col.DHI);
             end
-            
+            % Saves geographical info
             geodata.lat = geo.lat;
             geodata.lon = geo.lon;
             geodata.alt = geo.alt;

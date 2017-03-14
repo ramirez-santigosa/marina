@@ -6,20 +6,21 @@
 %
 % MODULE 2: QC (Quality control)
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\1_FORMAT
-%       One Matlab file per year: data  'ASP00-BOM-01-YYYY'
+%       One Matlab file per year: data i.e. 'ASP00-BOM-01-YYYY'
 %       Each file contains the structured variable 'data'
-% 
-% OUTPUT: 
+%
+% OUTPUT:
 % ..\OUTPUT\2_QC
-%       One Matlab file per year: dataqc  'ASP00-BOM-01-YYYY_QC'
-%       Each file contains the structured variable  'dataqc'
-%       Same as "data" but adding two more variables
+%       One Matlab file per year: dataqc i.e. 'ASP00-BOM-01-YYYY_QC'
+%       Each file contains the structured variable 'dataqc'
+%       Same as "data" but adding two fields
 %       (records are sorted and a the year is full)
-%  (1)  data.mqc  = [date_vec(:,1:6)(TST) GHIord eGHI DNIord eDNI DHIord eDHI];
-%  (2)  datos.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m];
+%  (1)  dataqc.mqc  = [date_vec(:,1:6)(TST) GHIord fGHI DNIord fDNI DHIord fDHI]
+%  (2)  datosqc.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
 %
 %       figures tests per variables
 %       figures GHI measured vs. calculated
@@ -29,10 +30,10 @@ close, clearvars, %clc
 run('Configuration_BSRN_ASP.m');
 
 for y = year_ini:year_end
-            
+    
     year_str = num2str(y);
     fprintf('Quality control of %s year %s\n',name,year_str);
-
+    
     path_fig_year_ini = strcat(path_qc,'\','figures');
     if ~exist(path_fig_year_ini,'dir')
         mkdir(path_fig_year_ini);
