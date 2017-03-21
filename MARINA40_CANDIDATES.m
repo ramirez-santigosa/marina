@@ -6,143 +6,149 @@
 %
 % MODULE 4: CANDIDATES FOR THE TMY GENERATION BASED IN FDA DISTANCES
 % Version of July, 2015. L. Ramírez; At CSIRO.
-% Update F. Mendoza (February 2017) at CIEMAT.
+% Update F. Mendoza (March 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUTS
 % ..\OUTPUT\3_VALIDATION
-%       ASP00-BOM-01.xlsx'
-%           datos_dia [AÑO MES DIA VALOR_DIARIO]
+%       One Excel file per year i.e. 'ASP00-BOM-01.xlsx'
+%       datos_dia [AÑO MES DIA VALOR_DIARIO]
 %
-% OUTPUT
+% OUTPUT !!!
 % ..\OUTPUT\4_CASES
 %       ASP00-BOM-01-CANDIDATOS.xlsx';
 %       (1) Tables with the whole data 12 rows
-%           FDAT_num (value) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin] 
-%           FDAT_por (perct) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin] 
+%           FDAT_num (value) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
+%           FDAT_por (perct) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
 %       (2)Tables with a row for each month
-%           FDA_num (value) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin] 
-%           FDA_por (perct) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin] 
+%           FDA_num (value) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
+%           FDA_por (perct) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
 %       INPUT-GENERATION.xlsx';
 %        File with 3 Sheets:
 %           VARIABLE:   name of the main variable in A1 (GHI / DNI)
-%           INPUT:      number of the years selected for each month 
+%           INPUT:      number of the years selected for each month
 %                       columns from B (B2:B13)to number of cases
-%           OBJECTIVE:  values that would like to be reached for each month 
+%           OBJECTIVE:  values that would like to be reached for each month
 %                       columns from B (B2:B13)to number of cases
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clear
-clc
-close all
-run('Configuration_BURNS.m');
 
-[s,mess,messid] = mkdir(ruta_cases);
+close, clearvars, %clc
+run('Configuration_BSRN_ASP.m');
 
-name     = [filedata.loc '00-' filedata.own '-' filedata.num];
+if ~exist(path_cases,'dir')
+    [s,mess,messid] = mkdir(path_cases);
+end
 
-file_OUT   = strcat(ruta_cases,'\',name,'-CANDIDATOS.xlsx');
-file_input = strcat(ruta_cases,'\','INPUT-GENERATION.xlsx');
+num_years = year_end-year_ini+1;
+namef = [loc '00-' owner_station '-' num];
+file_xls = strcat(path_val,'\',namef,'.xlsx');
 
-%Desactiva el warning de que se cree una nueva hoja excel.
+file_Out = strcat(path_cases,'\',namef,'-CANDIDATES.xlsx');
+file_Input = strcat(path_cases,'\','INPUT-GENERATION.xlsx');
+
+% Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
 
-% READING THE DAILY VALUES
-Val_dia = xlsread(file_IN, 'Val-dia');
-colDNI=5:6:6*num_annos;
-colGHI=2:6:6*num_annos;
-DNI=Val_dia(:,colDNI);
-GHI=Val_dia(:,colGHI);
-% Voy a probar a selecionar el mes con menos cambios.
-Faltan=xlsread(file_IN, 'Tabla-faltan');
-Faltan(1,:)=[];
+%% READING THE DAILY VALUES !¿Porque no directamente de Matlab?
+Val_Day = xlsread(file_xls, 'Val_Day'); % Text headers discarded
+colDNId = 5:6:6*num_years;
+colGHId = 2:6:6*num_years;
+DNI = Val_Day(:,colDNId);
+GHI = Val_Day(:,colGHId);
 
-% GENERATION OF A CONSECUTIUVE DAILY TABLE
-fila=0;
-num_dias_mes=[31 28 31 30 31 30 31 31 30 31 30 31];
-for anno=anno_ini:anno_end
-    for mes=1:12
-        for dia=1:num_dias_mes(mes)
-            fila=fila+1;
-            datos_dia(fila,1)=anno;
-            datos_dia(fila,2)=mes;
-            datos_dia(fila,3)=dia;      
+% Voy a probar a selecionar el mes con menos cambios.???
+nReplace = xlsread(file_xls, '#_Replace');
+nReplace(1,:) = []; % Trim headers (Years)
+
+%% GENERATION OF A CONSECUTIUVE DAILY TABLE
+row = 0;
+num_days = [31 28 31 30 31 30 31 31 30 31 30 31];
+data_day = zeros(365*num_years,4);
+
+for y = year_ini:year_end
+    for m = 1:12
+        for d = 1:num_days(m)
+            row = row+1;
+            data_day(row,1) = y;
+            data_day(row,2) = m;
+            data_day(row,3) = d;
         end
     end
 end
 
-% ADDING DAILY VALUES TO THE CONSECUTIVE TABLE
-temp=reshape(DNI,[],1);
-datos_dia(:,4)=temp;
+%% ADDING DAILY VALUES TO THE CONSECUTIVE TABLE
+temp = reshape(DNI,[],1);
+data_day(:,4) = temp;
 
 % READING THE MONTHLY VALUES
-Val_month = xlsread(file_IN, 'Val-mes');
-colDNIcal=6:6:6*num_annos;
-colGHIcal=3:6:6*num_annos;
-DNI_month = Val_month(:,colDNI);
-DNI_cal   = Val_month(:,colDNIcal);
-GHI_cal   = Val_month(:,colGHIcal);
+Val_Month = xlsread(file_xls, 'Val_Month');
+colDNIm = 6:6:6*num_annos;
+colGHIm = 3:6:6*num_annos;
+DNI_month = Val_month(:,colDNId);
+DNI_cal = Val_month(:,colDNIm);
+GHI_cal = Val_month(:,colGHIm);
 
 % EVALUATING FDA FOR EACH MONTH (ALL YEARS)
-maximo=max(datos_dia(:,4));
+maximo=max(data_day(:,4));
 num_int=10;
-for mes=1:12
+for m=1:12
     
-    pos_mes=(datos_dia(:,2)==mes);
+    pos_mes=(data_day(:,2)==m);
     
     % Calculating the monthly mean
-%     good_years = find(DNI_cal(mes,:) == 1 & GHI_cal(mes,:) == 1);
-    good_years = find(DNI_cal(mes,:) == 1 );
-    month_av(mes,1)= mean(DNI_month(mes,good_years));
+    %     good_years = find(DNI_cal(mes,:) == 1 & GHI_cal(mes,:) == 1);
+    good_years = find(DNI_cal(m,:) == 1 );
+    month_av(m,1)= mean(DNI_month(m,good_years));
     
     %removing positions of the bad years
-    bad_years = find(DNI_cal(mes,:) ~=1 & GHI_cal(mes,:) ~=1);
+    bad_years = find(DNI_cal(m,:) ~=1 & GHI_cal(m,:) ~=1);
     bad_years=bad_years+anno_ini;
     if any(bad_years)
-       for bad=1:length(bad_years)
-          pos_bad = (datos_dia(:,2)==mes & datos_dia(:,1)==bad_years(bad));
-          pos_mes = pos_mes - pos_bad;
-          clear pos_bad
-       end
+        for bad=1:length(bad_years)
+            pos_bad = (data_day(:,2)==m & data_day(:,1)==bad_years(bad));
+            pos_mes = pos_mes - pos_bad;
+            clear pos_bad
+        end
     end
     pos_mes=find(pos_mes); % para volver a los numeros de las posiciones
     
-    FDAT_num(mes,1)=0;
-    FDAT_num(mes,2)=mes;
-    FDAT_num(mes,3)=0;
-    FDAT_por(mes,1)=0;
-    FDAT_por(mes,2)=mes;
-    FDAT_por(mes,3)=0;
-    [FDAT_num(mes,4:13),FDAT_por(mes,4:13)]=FDA_general(datos_dia(pos_mes,4),maximo,num_int);
+    FDAT_num(m,1)=0;
+    FDAT_num(m,2)=m;
+    FDAT_num(m,3)=0;
+    FDAT_por(m,1)=0;
+    FDAT_por(m,2)=m;
+    FDAT_por(m,3)=0;
+    [FDAT_num(m,4:13),FDAT_por(m,4:13)]=FDA_general(data_day(pos_mes,4),maximo,num_int);
 end
 headers{1}='0000';
 headers{2}='MONTH';
 headers{3}='0000';
 for i=1:num_int
-   headers{i+3}=strcat('int',num2str(i));
+    headers{i+3}=strcat('int',num2str(i));
 end
-xlswrite(file_OUT, [headers; num2cell(FDAT_num)],'FDATotal_num');
-xlswrite(file_OUT, [headers; num2cell(floor(FDAT_por*100)/100)],'FDATotal_por');
+xlswrite(file_Out, [headers; num2cell(FDAT_num)],'FDATotal_num');
+xlswrite(file_Out, [headers; num2cell(floor(FDAT_por*100)/100)],'FDATotal_por');
 
 
 %FDA OF EACH INDIVIDUAL MONTH (EACH YEAR)
-anno_ini=min(datos_dia(:,1));
-anno_fin=max(datos_dia(:,1));
-fila=0;
+anno_ini=min(data_day(:,1));
+anno_fin=max(data_day(:,1));
+row=0;
 for aa=anno_ini:anno_fin
-    for mes=1:12
-        fila=fila+1;
-        pos_mes=find( datos_dia(:,1)==aa & datos_dia(:,2)==mes);
-        FDA_num(fila,1)=aa;
-        FDA_num(fila,2)=mes;
-        FDA_num(fila,3)=0;
-        FDA_por(fila,1)=aa;
-        FDA_por(fila,2)=mes;
-        FDA_por(fila,3)=0;
-        [FDA_num(fila,4:3+num_int),FDA_por(fila,4:3+num_int)]=FDA_general(datos_dia(pos_mes,4),maximo,num_int);
+    for m=1:12
+        row=row+1;
+        pos_mes=find( data_day(:,1)==aa & data_day(:,2)==m);
+        FDA_num(row,1)=aa;
+        FDA_num(row,2)=m;
+        FDA_num(row,3)=0;
+        FDA_por(row,1)=aa;
+        FDA_por(row,2)=m;
+        FDA_por(row,3)=0;
+        [FDA_num(row,4:3+num_int),FDA_por(row,4:3+num_int)]=FDA_general(data_day(pos_mes,4),maximo,num_int);
     end
 end
 headers{1}='YEAR';
-xlswrite(file_OUT, [headers; num2cell(FDA_num)],'FDAyears_num');
-xlswrite(file_OUT, [headers; num2cell(floor(FDA_por*100)/100)],'FDAyears_por');
+xlswrite(file_Out, [headers; num2cell(FDA_num)],'FDAyears_num');
+xlswrite(file_Out, [headers; num2cell(floor(FDA_por*100)/100)],'FDAyears_por');
 
 disp('Candidates selected!!');
 
@@ -157,50 +163,50 @@ for i=1:c
 end
 pos_years=[anno_ini:anno_fin];
 
-for mes=1:12
-    head{mes}=strcat('Month',num2str(mes));
-    [valor(:,mes),pos_candidato(:,mes)]=sort(resultado(:,mes));
+for m=1:12
+    head{m}=strcat('Month',num2str(m));
+    [valor(:,m),pos_candidato(:,m)]=sort(resultado(:,m));
     CANDIDATES=pos_candidato+anno_ini-1;
     
     % TMY METHODOLGY
     % With the 5 lowerst, search the month  close to the mean
     % preselected positions in the years
     for pre=1:num_pre
-       position_preselected(pre)=find(pos_years==CANDIDATES(pre,mes));
+        position_preselected(pre)=find(pos_years==CANDIDATES(pre,m));
     end
     % values of the preselted months
-    Preselected_values=DNI_month(mes,position_preselected);
-    Diference=abs(Preselected_values-month_av(mes,1));
+    Preselected_values=DNI_month(m,position_preselected);
+    Diference=abs(Preselected_values-month_av(m,1));
     selected_value = min(Diference);
     pos_selecTMY = find (Diference==selected_value);
     
-    Val_selectedTMY(mes)=DNI_month(mes,position_preselected(pos_selecTMY(1)));
-    Year_selectedTMY(mes)=pos_years(position_preselected(pos_selecTMY(1)));
-    % almacena las FDA de la primera selección 
-    FDA_sel1(mes,1)=Year_selectedTMY(mes);
-    FDA_sel1(mes,2)=mes;
-    FDA_sel1(mes,3)=0;
-    pos1= find(FDA_por(:,1)==Year_selectedTMY(mes) & FDA_por(:,2)==mes);
-    FDA_sel1_por(mes,4:13)=FDA_por(pos1,4:13);
-    FDA_sel1_num(mes,4:13)=FDA_num(pos1,4:13);
+    Val_selectedTMY(m)=DNI_month(m,position_preselected(pos_selecTMY(1)));
+    Year_selectedTMY(m)=pos_years(position_preselected(pos_selecTMY(1)));
+    % almacena las FDA de la primera selección
+    FDA_sel1(m,1)=Year_selectedTMY(m);
+    FDA_sel1(m,2)=m;
+    FDA_sel1(m,3)=0;
+    pos1= find(FDA_por(:,1)==Year_selectedTMY(m) & FDA_por(:,2)==m);
+    FDA_sel1_por(m,4:13)=FDA_por(pos1,4:13);
+    FDA_sel1_num(m,4:13)=FDA_num(pos1,4:13);
     
     % LMR1 METHODOLGY
     % With the 5 lowerst, search the LESS MISSING REGORDS
     % preselected positions in the years
     % values of the preselted months
-    Preselected_faltan=Faltan(mes,position_preselected);
+    Preselected_faltan=nReplace(m,position_preselected);
     Min_faltan=min(Preselected_faltan);
     pos_selecLMR = find (Preselected_faltan==Min_faltan);
     
-    Val_selectedLMR1(mes)=DNI_month(mes,position_preselected(pos_selecLMR(1)));
-    Year_selectedLMR1(mes)=pos_years(position_preselected(pos_selecLMR(1)));
-    % almacena las FDA de la primera selección 
-    FDA_sel21(mes,1)=Year_selectedLMR1(mes);
-    FDA_sel21(mes,2)=mes;
-    FDA_sel21(mes,3)=0;
-    pos2= find(FDA_por(:,1)==Year_selectedLMR1(mes) & FDA_por(:,2)==mes);
-    FDA_sel21_por(mes,4:13)=FDA_por(pos2,4:13);
-    FDA_sel21_num(mes,4:13)=FDA_num(pos2,4:13);
+    Val_selectedLMR1(m)=DNI_month(m,position_preselected(pos_selecLMR(1)));
+    Year_selectedLMR1(m)=pos_years(position_preselected(pos_selecLMR(1)));
+    % almacena las FDA de la primera selección
+    FDA_sel21(m,1)=Year_selectedLMR1(m);
+    FDA_sel21(m,2)=m;
+    FDA_sel21(m,3)=0;
+    pos2= find(FDA_por(:,1)==Year_selectedLMR1(m) & FDA_por(:,2)==m);
+    FDA_sel21_por(m,4:13)=FDA_por(pos2,4:13);
+    FDA_sel21_num(m,4:13)=FDA_num(pos2,4:13);
     
     clear pos1 pos2 pos22
 end
@@ -208,28 +214,28 @@ end
 % TMY METHODOLOGY
 output1(1,:) = Year_selectedTMY'; %  1ST COLUMN, YEAR SELECTED
 output1(2,:) = Val_selectedTMY';  %  2ND COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
-output1(4,:) = floor(month_av');   %4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS 
-xlswrite(file_OUT, [headers; num2cell(FDA_sel1_num)],'FDA_sel1_num');
-xlswrite(file_OUT, [headers; num2cell(floor(FDA_sel1_por*100)/100)],'FDA_sel1_por');
-xlswrite(file_OUT, [head; num2cell(floor(valor))]','distances');
-xlswrite(file_OUT, [head; num2cell(CANDIDATES)]','CANDIDATES');
-xlswrite(file_OUT, [head; num2cell(output1)]','output1');
+output1(4,:) = floor(month_av');   %4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS
+xlswrite(file_Out, [headers; num2cell(FDA_sel1_num)],'FDA_sel1_num');
+xlswrite(file_Out, [headers; num2cell(floor(FDA_sel1_por*100)/100)],'FDA_sel1_por');
+xlswrite(file_Out, [head; num2cell(floor(valor))]','distances');
+xlswrite(file_Out, [head; num2cell(CANDIDATES)]','CANDIDATES');
+xlswrite(file_Out, [head; num2cell(output1)]','output1');
 % Write the inputs for series generation
-xlswrite(file_input, [{'DNI'}] ,                     'VARIABLE', 'A1');
-xlswrite(file_input, [{'MONTH'} {'TMY'}],            'INPUT', 'A1');
-xlswrite(file_input, [head; num2cell(output1(1,:))]','INPUT','A2');
-xlswrite(file_input, [{'MONTH'} {'TMY'}],            'OBJECTIVE', 'A1');
-xlswrite(file_input, [head; num2cell(output1(2,:))]','OBJECTIVE','A2');
+xlswrite(file_Input, [{'DNI'}] ,                     'VARIABLE', 'A1');
+xlswrite(file_Input, [{'MONTH'} {'TMY'}],            'INPUT', 'A1');
+xlswrite(file_Input, [head; num2cell(output1(1,:))]','INPUT','A2');
+xlswrite(file_Input, [{'MONTH'} {'TMY'}],            'OBJECTIVE', 'A1');
+xlswrite(file_Input, [head; num2cell(output1(2,:))]','OBJECTIVE','A2');
 
 % LMR1 METHODOLOGY
 output21(1,:) = Year_selectedLMR1';  %  1ST COLUMN, YEAR SELECTED
 output21(2,:) = Val_selectedLMR1';   %  2ND COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
-output21(4,:) = floor(month_av');   %4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS 
-xlswrite(file_OUT, [headers; num2cell(FDA_sel21_num)],'FDA_sel21_num');
-xlswrite(file_OUT, [headers; num2cell(floor(FDA_sel21_por*100)/100)],'FDA_sel21_por');
-xlswrite(file_OUT, [head; num2cell(output21)]','output21');
+output21(4,:) = floor(month_av');   %4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS
+xlswrite(file_Out, [headers; num2cell(FDA_sel21_num)],'FDA_sel21_num');
+xlswrite(file_Out, [headers; num2cell(floor(FDA_sel21_por*100)/100)],'FDA_sel21_por');
+xlswrite(file_Out, [head; num2cell(output21)]','output21');
 % Write the inputs for series generation
-xlswrite(file_input, [{'LMR'}],                 'INPUT', 'C1');
-xlswrite(file_input, [num2cell(output21(1,:))]','INPUT','C2');
-xlswrite(file_input, [{'LMR'}],                 'OBJECTIVE', 'C1');
-xlswrite(file_input, [num2cell(output21(2,:))]','OBJECTIVE','C2');
+xlswrite(file_Input, [{'LMR'}],                 'INPUT', 'C1');
+xlswrite(file_Input, [num2cell(output21(1,:))]','INPUT','C2');
+xlswrite(file_Input, [{'LMR'}],                 'OBJECTIVE', 'C1');
+xlswrite(file_Input, [num2cell(output21(2,:))]','OBJECTIVE','C2');

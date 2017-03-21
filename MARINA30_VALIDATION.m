@@ -4,7 +4,7 @@
 %
 % Developed in the context of ASTRI
 %
-% MODULE 3: VALIDATION (Days and months valids)
+% MODULE 3: VALIDATION AND GAP FILLING (Days and months valid)
 % Version of July, 2015. L. Ramírez; At CSIRO.
 % Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,7 +23,7 @@
 %  (2)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
 %       validation process flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
 %  (3)  dataval.replaced = Array with the replaced days along the years
-%  (4)  dataval.replaced_month = Array with the number of replacements in
+%  (4)  dataval.nonvalid_m = Array with the number of non-valid days in 
 %       each month.
 %
 %       One Excel file with all years validation results:
@@ -31,7 +31,7 @@
 %  (2)  Sheet Val_Month: Results of the monthly validation of all years
 %  (3)  Sheet GHI: Summary of the monthly GHI values (kWh/m2) of each year
 %  (4)  Sheet DNI: Summary of the monthly DNI values (kWh/m2) of each year
-%  (5)  Sheet #_Replace: Summary of the number of replacements made in each
+%  (5)  Sheet #_NonValid: Summary of the number of non-valid days in each
 %       month and year
 %  (6)  Sheet Replaced: Summary of the replaced days pointing out the
 %       origin day and the replaced day
@@ -44,7 +44,7 @@ if ~exist(path_val,'dir')
     [s,mess,messid] = mkdir(path_val);
 end
 
-max_nonvalid = 4; % Maximum number of allowed non valid days in a month
+max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 % Preallocation variables for Excel export
 colD = 6; res_daily_ex = zeros(365,(year_end-year_ini+1)*colD);
 colM = 6; res_month_ex = zeros(12,(year_end-year_ini+1)*colM);
@@ -83,7 +83,7 @@ for y = year_ini:year_end
     replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
     idxR = idxR+length(replace);
     
-    Table_missing(:,idx+1) = dataval.replaced_month(:,1);
+    Table_missing(:,idx+1) = dataval.nonvalid_m(:,1);
     Table_GHI(:,idx+1) = dataval.monthly(:,2);
     Table_DNI(:,idx+1) = dataval.monthly(:,5);
 end
@@ -130,7 +130,7 @@ end
 
 file_xls = strcat(path_val,'\',namef,'.xlsx');
 
-% Switch off warning of new excel sheet.
+% Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
 
 fprintf('Writing Excel file %s \n',namef);
@@ -150,9 +150,9 @@ xlswrite(file_xls,round(Table_GHI),'GHI','A2'); % Write the results
 xlswrite(file_xls,headerY,'DNI','A1'); % Write the headers
 xlswrite(file_xls,round(Table_DNI),'DNI','A2'); % Write the results
 
-% NUMBER OF REPLACEMENTS AND REPLACED DAYS PER MONTH AND YEAR -------------
-xlswrite(file_xls,headerY,'#_Replace','A1');
-xlswrite(file_xls,round(Table_missing),'#_Replace','A2');
+% NUMBER OF NON-VALID AND REPLACED DAYS PER MONTH AND YEAR -------------
+xlswrite(file_xls,headerY,'#_NonValid','A1');
+xlswrite(file_xls,round(Table_missing),'#_NonValid','A2');
 
 xlswrite(file_xls,hReplaced,'Replaced','A1');
 xlswrite(file_xls,replaced_ex,'Replaced','A2');

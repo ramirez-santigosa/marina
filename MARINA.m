@@ -23,7 +23,7 @@ MARINA20_QC
 MARINA30_VALIDATION
 
 %% Module 4: Candidates selection
-% MARINA40_CANDIDATES
+MARINA40_CANDIDATES
 
 %% Module 5: Annual series generation
 % MARINA50_SERIES_GENERATION

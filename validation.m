@@ -13,25 +13,25 @@ function dataval = validation(dataqc,level,max_nonvalid)
 %       dataval.daily: Saves daily radiation values (Wh/m2) and the flags of
 %       the daily validation process. Columns:
 %       1 - # of the day in the month (Dia Juliano???)
-%       2 - Daily GHI (Wh/m2)
+%       2 - Daily GHI (Wh/m2). NaN if it isn't valid
 %       3 - Flag daily GHI validation
 %       4 - # of the day in the month
-%       5 - Daily DNI (Wh/m2)
+%       5 - Daily DNI (Wh/m2). NaN if it isn't valid
 %       6 - Flag daily DNI validation
 %       dataval.monthly: Saves monthly radiation values (kWh/m2) and the
 %       flags of the monthly validation process. Columns:
 %       1 - # month
-%       2 - Monthly GHI (kWh/m2). NaN if not valid
+%       2 - Monthly GHI (kWh/m2). NaN if it isn't valid
 %       3 - Flag of the monthly GHI
 %       4 - # month
-%       5 - Monthly DNI (kWh/m2). NaN if not valid
+%       5 - Monthly DNI (kWh/m2). NaN if it isn't valid
 %       6 - Flag of the monthly DNI
 %       dataval.replaced: Array with the replaced days along the year. Columns:
 %       1 - Month
 %       2 - Origin day
 %       3 - Replaced day
-%       dataval.replaced_month: Array with the number of replacements in
-%       each month
+%       dataval.nonvalid_m: Array with the number of non-valid days in each
+%       month
 %
 % - F. Mendoza (February 2017) Update
 
@@ -117,11 +117,11 @@ end
 
 % valida_months Function tests the validity of each month for each variable
 % on the basis of the daily validation results. A month is valid if has as
-% much as 4 non valid days.
-[daily,monthly,replaced,replaced_month] = valida_months(res_daily,max_nonvalid);
+% much as 4 non-valid days.
+[daily,monthly,replaced,nonvalid_m] = valida_months(res_daily,max_nonvalid);
 
 dataval.daily = daily; % Update daily values if replacements were made
 dataval.monthly = monthly; % Saves monthly validation results
 dataval.replaced = replaced; % Array with the replaced days in the year
-dataval.replaced_month = replaced_month; % Number of replacements in each month
+dataval.nonvalid_m = nonvalid_m; % Number of non-valid days in each month
 end

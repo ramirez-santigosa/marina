@@ -6,7 +6,7 @@ function [output_obs,flag,daily,f_val] = valida_days(pos_day,dat,flag,num_obs,le
 %   pos_day: Logical array of the instants between sunrise and sunset
 %   dat: Array of radiation data of one day (24 h) for validation
 %   flag: QC flags of the radiation according with second module process
-%       (0:Not valid, 1:Rare but possible, 2:Possible and no rare, 3:Coherent value, 4:!???)
+%       (0:Non-valid, 1:Rare but possible, 2:Possible and no rare, 3:Coherent value, 4:!???)
 %   num_obs: Number of observations per hour
 %   level: Defines since which flag value a day is valid according to the
 %   QC flags. See help QC function.
@@ -15,7 +15,7 @@ function [output_obs,flag,daily,f_val] = valida_days(pos_day,dat,flag,num_obs,le
 %   output_obs: Interpolated values series
 %   flag: Updated quality control flag in the case of interpolated data
 %   daily: Value of the daily radiation or NaN if it isn't valid
-%   f_val: Flag of the dayly validation process. : 0: Not valid, 1: Valid, 2: ???!!
+%   f_val: Flag of the dayly validation process. : 0: Non-valid, 1: Valid, 2: ???!!
 %
 % - F. Mendoza (March 2017) Update
 
@@ -50,7 +50,7 @@ elseif sum(bads) <= num_obs % Less than one not valid hour in the day (Interpola
     daily = round(sum(dat(pos_day))/num_obs); % Wh/m2
     f_val = 1; % Valid day
 else % More that one not valid hour in the day
-    daily = NaN; % Not valid day
+    daily = NaN; % Non-valid day
     f_val = 0;
 end
 

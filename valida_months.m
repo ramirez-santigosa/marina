@@ -1,29 +1,29 @@
-function [daily,monthly,replaced,replaced_month] = valida_months(input_daily,max_nonvalid)
+function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_nonvalid)
 %VALIDA_MONTHS Evaluates the validity of each month of a complete year (365
-% days). A month is valid if has as much as 'max_nonvalid' nonvalid days.
-% On valid months, nonvalid days are replaced with the closest day to the
+% days). A month is valid if has as much as 'max_nonvalid' non-valid days.
+% On valid months, non-valid days are replaced with the closest day to the
 % mean value. DNI is the main variable for determining replacements.
 %   INPUT:
 %   input_daily: Results of the daily validation of the year (output of the
 %   'valida_days' function). These results always consider 365 days per year.
-%   max_nonvalid: Maximum number of allowed non valid days in a month in
+%   max_nonvalid: Maximum number of allowed non-valid days in a month in
 %   order to be considered a valid month.
 %
 %   OUTPUT:
 %   daily: Updated daily radiation values, if replacements were made.
 %   Columns:
 %       1 - # of the day in the month (Dia Juliano???)
-%       2 - Daily GHI (Wh/m2). NaN if not valid
+%       2 - Daily GHI (Wh/m2). NaN if it isn't valid
 %       3 - Flag daily GHI validation
 %       4 - # of the day in the month
-%       5 - Daily DNI (Wh/m2). NaN if not valid
+%       5 - Daily DNI (Wh/m2). NaN if it isn't valid
 %       6 - Flag daily DNI validation
 %   monthly: Results of the monthly validation of a specific year. Columns:
 %       1 - # month
-%       2 - Monthly GHI (kWh/m2). NaN if not valid
+%       2 - Monthly GHI (kWh/m2). NaN if it isn't valid
 %       3 - Flag monthly GHI validation
 %       4 - # month
-%       5 - Monthly DNI (kWh/m2). NaN if not valid
+%       5 - Monthly DNI (kWh/m2). NaN if it isn't valid
 %       6 - Flag monthly DNI validation
 %   replaced: Replacements in a year. Columns:
 %       1 - Month 
@@ -42,7 +42,7 @@ monthly = NaN(12,1);
 
 num_r = 0; % Number of replacements
 replaced = zeros(12*max_nonvalid,3); % Preallocation (max number of replacements in a year)
-replaced_month = zeros(12,1); % Preallocation (# of months)
+nonvalid_m = zeros(12,1); % Preallocation (# of months)
 
 %% Loop through months
 for m = 1:12
@@ -71,7 +71,7 @@ for m = 1:12
     
     if num_nvDNI==0 % If all days in DNI series are valid -----------------
         rad_monthDNI = sum(DNI); % Monthly DNI is sum up of the daily values
-        f_mvalDNI = 1;
+        f_mvalDNI = 1; % Monthly flag !
         
         % GHI treatment
         if num_nvGHI==0
@@ -84,12 +84,12 @@ for m = 1:12
             f_mvalGHI = 3; %!!! Que significaría?
         end
         
-    elseif num_nvDNI<=max_nonvalid % If DNI non valid days are less than the allowed ---
+    elseif num_nvDNI<=max_nonvalid % If DNI non-valid days are less than the allowed ---
         valid = ~isnan(DNI); % Look for valid days
         rad_mean = sum(DNI(valid))/sum(valid); % Calculates monthly mean of the valid days
         [~, i_min_dist] = min(abs(DNI-rad_mean)); % Index of the day with the closest value to the mean value
-        
-        days_m(pos_nvDNI) = days_m(i_min_dist); % Replace non valid days with the closest to the mean
+        % Lo de la norma de +-5 días del día subtituido !???
+        days_m(pos_nvDNI) = days_m(i_min_dist); % Replace non-valid days with the closest to the mean
         DNI(pos_nvDNI) = DNI(i_min_dist);
         rad_monthDNI = sum(DNI); % Monthly DNI is sum up of the daily values
         f_mvalDNI = 1;
@@ -101,7 +101,7 @@ for m = 1:12
         
         if sum(validGHI)==sum(valid) % Equal number of valid days !!!Pero no implica que sean los mismos?
             % The replacements did in DNI treatment are repeated in GHI
-            % treatment, it is, GHI values in the positions of non valid
+            % treatment, it is, GHI values in the positions of non-valid
             % days in DNI series are replaced with the GHI value in the
             % position of the closest to the mean DNI daily value.
             GHI(pos_nvDNI) = GHI(i_min_dist);
@@ -119,22 +119,17 @@ for m = 1:12
         replaced(num_r+1:num_r+num_nvDNI,2) = ones(sum(pos_nvDNI),1)*days_m(i_min_dist); % Origin day
         replaced(num_r+1:num_r+num_nvDNI,3) = dummy(pos_nvDNI); % Replaced days
         num_r = num_r+num_nvDNI; % Update global number of replacements in a year
-%         for k = 1:num_nvDNI
-%             num_r = num_r+1;
-%             replaced(num_r,1) = m; % Month
-%             replaced(num_r,2) = days_m(i_min_dist); % dia de origen
-%             replaced(num_r,3) = dummy(k); % dia de fin
-%         end
-        replaced_month(m,1) = num_nvDNI; % Number of replacements in the month
         
-    else % Number of non valid days is greater than the allowed -----------
+    else % Number of non-valid days is greater than the allowed -----------
         rad_monthDNI = NaN;
-        f_mvalDNI = 0; % Non valid month
+        f_mvalDNI = 0; % Non-valid month
         rad_monthGHI = NaN;
-        f_mvalGHI = 7; % Non valid month
+        f_mvalGHI = 7; % Non-valid month
     end
     
     % Outputs
+    nonvalid_m(m,1) = num_nvDNI; % Number of non-valid days in the month
+    
     % Update daily values after possible replacements
     daily(first:last,1) = days_m; % Number of the day in the month
     daily(first:last,2) = GHI*1000; % Daily GHI (Wh/m2)
