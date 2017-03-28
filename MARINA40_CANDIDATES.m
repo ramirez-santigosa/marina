@@ -1,4 +1,3 @@
-function [ ] = MARINA40_CANDIDATES( )
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % MARINA (Multi annual radiation information approach)
 % A TOOL FOR SOLAR RADIATION SERIES GENERATION
