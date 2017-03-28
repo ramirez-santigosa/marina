@@ -54,7 +54,7 @@ for y = year_ini:year_end
     name_out = [loc '00-' owner_station '-' num '-' ID];
     load(strcat(path_format,'\',name_out)); % Load of the standard data structure
     
-    [dataqc] = QC(path_fig_year_ini,data,var,max_rad,mat_cols,tzone,name,offset_empirical);
+    [ dataqc ] = QC(path_fig_year_ini,data,var,max_rad,mat_cols,tzone,name,offset_empirical);
     close all
     
     save(strcat(path_qc,'\',name_out,'_QC'),'dataqc');

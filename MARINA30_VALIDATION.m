@@ -41,7 +41,7 @@ close, clearvars, %clc
 run('Configuration_BSRN_ASP.m');
 
 if ~exist(path_val,'dir')
-    [s,mess,messid] = mkdir(path_val);
+    mkdir(path_val);
 end
 
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
@@ -62,7 +62,6 @@ for y = year_ini:year_end
     
     year_str = num2str(y);
     fprintf('Validation of %s year %s\n',name,year_str);
-    changes_year = [];
     
     namef = [loc '00-' owner_station '-' num];
     name_out = [namef '-' year_str];
@@ -78,11 +77,11 @@ for y = year_ini:year_end
     idx = y-year_ini;
     res_daily_ex(:,idx*colD+1:(idx+1)*colD) = dataval.daily;
     res_month_ex(:,idx*colM+1:(idx+1)*colM) = dataval.monthly;
-    
+    % Replaced days in each year
     replace = [ones(size(dataval.replaced,1),1)*y, dataval.replaced];
     replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
     idxR = idxR+length(replace);
-    
+    % Non-valid days & DNI, GHI validation results
     Table_missing(:,idx+1) = dataval.nonvalid_m(:,1);
     Table_GHI(:,idx+1) = dataval.monthly(:,2);
     Table_DNI(:,idx+1) = dataval.monthly(:,5);

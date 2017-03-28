@@ -41,8 +41,8 @@ daily = NaN(size(input_daily));
 monthly = NaN(12,1);
 
 num_r = 0; % Number of replacements
-replaced = zeros(12*max_nonvalid,3); % Preallocation (max number of replacements in a year)
-nonvalid_m = zeros(12,1); % Preallocation (# of months)
+replaced = zeros(12*max_nonvalid,3); % Pre-allocation (max number of replacements in a year)
+nonvalid_m = zeros(12,1); % Pre-allocation (# of months)
 
 %% Loop through months
 for m = 1:12
