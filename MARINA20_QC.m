@@ -39,10 +39,6 @@ for y = year_ini:year_end
         mkdir(path_fig_year_ini);
     end
     
-    var = logical([1 1 1]); % Variables for QC process [GHI DNI DHI] 1(true)/0(false)
-    offset_empirical = 0; % Just in case the results seem to have timestamp mistakes
-    max_rad = 1600; % Max. solar radiation value for the figures
-    
     % Columns of the variable in the data matrix
     mat_cols.date = 1:6;
     mat_cols.GHI = 7;

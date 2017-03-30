@@ -19,4 +19,5 @@ if numel(input) < length
 else
     out_char = input(1:length);
 end
+
 end

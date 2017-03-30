@@ -24,4 +24,5 @@ else
     out_char(1:length)='0';
     ok = 0;
 end
+
 end

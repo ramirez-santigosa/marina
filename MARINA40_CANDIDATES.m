@@ -8,23 +8,21 @@
 % Version of July, 2015. L. Ramírez; At CSIRO.
 % Update F. Mendoza (March 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INPUTS
+% INPUT:
 % ..\OUTPUT\3_VALIDATION
-%       One Excel file per year i.e. 'ASP00-BOM-01.xlsx'
-%       !!! datos_dia [AÑO MES DIA VALOR_DIARIO]
+%       One Excel file with all years validation i.e. 'ASP00-BOM-01.xlsx'
 %
-% OUTPUT !!!
+% OUTPUT:
 % ..\OUTPUT\4_CASES
-%       ASP00-BOM-01-CANDIDATOS.xlsx';
-%       (1) Tables with the whole data 12 rows
-%           CDFT_num (value) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
-%           CDFT_por (perct) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
-%       (2)Tables with a row for each month
-%           CDF_num (value) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
-%           CDF_por (perct) [YEAR MONTH 0 VAL_INT1 VAL_INT2 ... VAL_INT_fin]
-%       INPUT-GENERATION.xlsx';
-%        File with 3 Sheets:
-%           VARIABLE:   name of the main variable in A1 (GHI / DNI)
+%       ASP00-BOM-01-CANDIDATES.xlsx
+%       (1) Tables with the whole data 12 rows (long all years)
+%           CDFT_num (value) [  0 MONTH 0 VAL_BIN1 VAL_BIN2 ... VAL_BIN_end]
+%           CDFT_por (perct) [  0 MONTH 0 VAL_INT1 VAL_INT2 ... VAL_BIN_end]
+%       (2) Tables with a row for each month
+%           CDF_num (value) [YEAR MONTH 0 VAL_BIN1 VAL_BIN2 ... VAL_BIN_end]
+%           CDF_por (perct) [YEAR MONTH 0 VAL_BIN1 VAL_BIN2 ... VAL_BIN_end]
+%       INPUT-GENERATION.xlsx': File with 3 Sheets:
+%           VARIABLE:   name of the main variable (GHI or DNI)
 %           INPUT:      number of the years selected for each month
 %                       columns from B (B2:B13)to number of cases
 %           OBJECTIVE:  values that would like to be reached for each month
@@ -57,7 +55,6 @@ DNI_d = Val_Day(:,colDNId); % Daily DNI data
 
 % Generation of a consecutive daily table
 row = 0;
-num_days = [31 28 31 30 31 30 31 31 30 31 30 31];
 data_day = zeros(365*num_years,4);
 
 for y = year_ini:year_end
@@ -110,13 +107,13 @@ for m = 1:12
         end
     end
     
-%     CDFT_num(m,1) = 0;
+    %     CDFT_num(m,1) = 0;
     CDFT_num(m,2) = m;
-%     CDFT_num(m,3) = 0;
+    %     CDFT_num(m,3) = 0;
     
-%     CDFT_cumpct(m,1) = 0;
+    %     CDFT_cumpct(m,1) = 0;
     CDFT_cumpct(m,2) = m;
-%     CDFT_cumpct(m,3) = 0;
+    %     CDFT_cumpct(m,3) = 0;
     
     [CDFT_num(m,4:end), CDFT_cumpct(m,4:end)] = CDF_general(data_day(pos_m,4),maximum,nbins); % Function
 end
@@ -183,8 +180,7 @@ for i = 1:y
     results(i,:) = sum_m(:,:,i)';
 end
 
-years = year_ini:year_end;
-num_pre = 3; % Number of pre-selected candidates. Must be < number of years
+years = year_ini:year_end; % Years analyzed
 % Pre-allocation
 headers_m = cell(1,12); % Headers months
 value = zeros(y,12); % Sorted summed absolute difference per month
@@ -200,7 +196,7 @@ CDF_sel1_cumpct = zeros(12,3+nbins); % Array to save the cumulative percent of e
 % Voy a probar a selecionar el mes con menos cambios.???
 nNonvalid = xlsread(file_xls, '#_NonValid');
 nNonvalid(1,:) = []; % Trim headers (Years)
-Val_selectedLMR1 = zeros(1,12); 
+Val_selectedLMR1 = zeros(1,12);
 Year_selectedLMR1 = zeros(1,12);
 CDF_sel2 = zeros(12,3); % Save date
 CDF_sel2_num = zeros(12,3+nbins); % Array to save the cumulative number of days of each bin per month
@@ -212,7 +208,7 @@ for m = 1:12
     CANDIDATES = pos_candidate+year_ini-1;
     
     % TMY METHODOLOGY
-    % With the 5 lowest, search the month closest to the mean preselected 
+    % With the 5 lowest, search the month closest to the mean preselected
     % positions in the years
     for pre = 1:num_pre
         position_preselected(pre) = find(years==CANDIDATES(pre,m));
@@ -255,9 +251,9 @@ for m = 1:12
 end
 
 %% TMY METHODOLOGY
-output1(1,:) = Year_selectedTMY'; %  1ST COLUMN, YEAR SELECTED
-output1(2,:) = Val_selectedTMY';  %  2ND COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
-output1(4,:) = floor(month_ave');   %4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS
+output1(1,:) = Year_selectedTMY'; % 1ST COLUMN, YEAR SELECTED
+output1(2,:) = Val_selectedTMY'; % 2ND COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
+output1(4,:) = floor(month_ave'); % 4TH COLUMN, MONTHLY MEAN OF THE VALID MONTHS
 
 xlswrite(file_Out,headers,'CDF_sel1_num','A1'); % Write the headers
 xlswrite(file_Out,CDF_sel1_num,'CDF_sel1_num','A2'); % Write the results
@@ -275,10 +271,10 @@ xlswrite(file_Out,headers_m','output1','A1');
 xlswrite(file_Out,output1','output1','B1');
 
 % Write the inputs for series generation
-xlswrite(file_Input,{'DNI'},'VARIABLE', 'A1'); % Write the headers
+xlswrite(file_Input,{'DNI'},'VARIABLE', 'A1'); % Main variable
 
-xlswrite(file_Input,[{'MONTH'} {'TMY'}],'INPUT', 'A1');
-xlswrite(file_Input,headers_m','INPUT','A2');
+xlswrite(file_Input,[{'MONTH'} {'TMY'}],'INPUT', 'A1'); % Write the headers
+xlswrite(file_Input,headers_m','INPUT','A2'); % Write the headers
 xlswrite(file_Input,output1(1,:)','INPUT','B2'); % Write the results
 
 xlswrite(file_Input,[{'MONTH'} {'TMY'}],'OBJECTIVE','A1');

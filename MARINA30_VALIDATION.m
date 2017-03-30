@@ -55,9 +55,6 @@ Table_missing = zeros(12,year_end-year_ini+1);
 Table_GHI = zeros(12,year_end-year_ini+1);
 Table_DNI = zeros(12,year_end-year_ini+1);
 
-% Level for validation. Defines since which flag value a day is valid according to the QC flags
-level = 1;
-
 for y = year_ini:year_end
     
     year_str = num2str(y);
@@ -149,7 +146,7 @@ xlswrite(file_xls,round(Table_GHI),'GHI','A2'); % Write the results
 xlswrite(file_xls,headerY,'DNI','A1'); % Write the headers
 xlswrite(file_xls,round(Table_DNI),'DNI','A2'); % Write the results
 
-% NUMBER OF NON-VALID AND REPLACED DAYS PER MONTH AND YEAR -------------
+% NUMBER OF NON-VALID AND REPLACED DAYS PER MONTH AND YEAR ----------------
 xlswrite(file_xls,headerY,'#_NonValid','A1');
 xlswrite(file_xls,round(Table_missing),'#_NonValid','A2');
 

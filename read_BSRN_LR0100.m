@@ -10,7 +10,7 @@ function [ok,ID,geo,dates,data,col] = read_BSRN_LR0100(filename)
 %        geo.lat latitude (decimal degree)
 %        geo.lon longitude (decimal degree)
 %        geo.alt altitude (meters)
-%   dates: a numerical vector with the data dates
+%   dates: a datetime array with the data dates
 %   data: a numerical matrix with the data
 %   col: Structure
 %        col.GHI: GHI column position
@@ -46,36 +46,8 @@ if (is_data==1 || is_text==1) % If both fields exist
     ID = my_data.textdata(2,1);
     % Second column => dates vector (the whole vector is needed, not the header)
     Date = my_data.textdata(2:end,2);
-    % Convert into character matrix
-    Date_mat = char(Date);
-    % Assign the position for each date variable
-    yyyy = Date_mat(:,1:4);
-    mm = Date_mat(:,6:7);
-    dd = Date_mat(:,9:10);
-    hh = Date_mat(:,12:13);
-    mi = Date_mat(:,15:16);
-    
-%     year = zeros(length(yyyy),1); % a = cellstr(yyyy);
-%     month = zeros(length(mm),1);
-%     day = zeros(length(dd),1);
-%     hour = zeros(length(hh),1);
-%     min = zeros(length(mi),1);
-% 
-%     for i = 1:length(yyyy)
-%         year(i) = str2double(yyyy(i,:));
-%         month(i) = str2double(mm(i,:));
-%         day(i) = str2double(dd(i,:));
-%         hour(i) = str2double(hh(i,:));
-%         min(i) = str2double(mi(i,:));
-%     end
-    
-    year = str2num(yyyy); % year = str2double(a);
-    month = str2num(mm);
-    day = str2num(dd);
-    hour = str2num(hh);
-    min = str2num(mi);
-    
-    dates = datenum(year,month,day,hour,min,0);
+    % Convert cell to datetime format for output
+    dates = datetime(Date,'InputFormat','yyyy-MM-dd''T''HH:mm');
     
     % Data headers
     % 1:ID; 2:Date; 3:Lat; 4:Lon; 5:Hei;

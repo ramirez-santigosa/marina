@@ -3,8 +3,8 @@
 % A TOOL FOR SOLAR RADIATION SERIES GENERATION
 %   Author: L. Ramirez, ..., F. Mendoza
 %   Update: 2017
-%   E-mail: ...
-%   Web-site:  ...
+%   E-mail: lourdes.ramirez@ciemat.es
+%   Web-site: solrea.ceta-ciemat.es
 %
 % This is the main file of this toolbox. Each one of the modules is
 % executed from it, according with a configuration file.
@@ -19,14 +19,14 @@ MARINA10_TOFORMAT
 %% Module 2: Quality Control
 MARINA20_QC
 
-%% Module 3: Qualification and Gap Filling
+%% Module 3: Validation and Gap Filling
 MARINA30_VALIDATION
 
 %% Module 4: Candidates selection
 MARINA40_CANDIDATES
 
 %% Module 5: Annual series generation
-% MARINA50_SERIES_GENERATION
+MARINA50_SERIES_GENERATION
 
 %% Module 6: Other??
 % run('MARINA6_PLOTTING_DAYS');

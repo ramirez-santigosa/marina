@@ -50,7 +50,6 @@ timedata.timezone = ref_temp; % Time reference in which data is acquired
 timedata.stamp = time_stamp;
 timedata.num_obs = num_obs;
 nodata = no_data;
-header = {'YYYY', 'MM', 'DD', 'HH', 'mm', 'ss', 'GHI', 'DNI', 'DHI'};
 
 %% Loop through years
 

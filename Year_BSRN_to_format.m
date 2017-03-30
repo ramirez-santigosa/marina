@@ -21,20 +21,20 @@ function [name_out,data] = Year_BSRN_to_format...
 %% Output file per year
 
 num_var = 3; % Number of variables considered (GHI DNI DHI)
-date_year = zeros(num_obs*8784,6); % Preallocate (considered leap years)
-data_year = zeros(num_obs*8784,num_var); % Preallocate (considered leap years)
+date_year = zeros(num_obs*8784,6); % Pre-allocate (considered leap years)
+data_year = zeros(num_obs*8784,num_var); % Pre-allocate (considered leap years)
 
 yyyy = num2str(year);
 row_summary = 1; % Init summary row
-sum_date = zeros(12,2); % Preallocate
-sum_col = zeros(12,num_var); % Preallocate
+sum_date = zeros(12,2); % Pre-allocate
+sum_col = zeros(12,num_var); % Pre-allocate
 idx = 1;
 
-for month = 1:12
+for m = 1:12
     % Saving a summary of the months
-    sum_date(row_summary,:) = [year month];
+    sum_date(row_summary,:) = [year m];
     
-    mm = num2str(month);
+    mm = num2str(m);
     if length(mm)<2 % Month => two characters
         mm = strcat('0',mm);
     end
@@ -52,7 +52,7 @@ for month = 1:12
         
         if ok == 1 % Exist and the inner information is ok
             dates_vec = datevec(dates);
-                        
+            
             % Saving a summary of the variables order
             sum_col(row_summary,1) = col.GHI;
             sum_col(row_summary,2) = col.DNI;
@@ -83,13 +83,13 @@ for month = 1:12
             
         else % Exist BUT the inside information is NOT ok
             sum_col(row_summary,:) = zeros(1,num_var);
-            disp(['File ', file_id, ' exists, but inside information is not ok.']);
+            warning(['File ', file_id, ' exists, but inside information is not ok.']);
         end
         
     else % File DOES NOT exists
         % Saving a summary when file does not exist
         sum_col(row_summary,:) = -1*ones(1,num_var);
-        disp(['File ', file_id, ' does not exists.'])
+        warning(['File ', file_id, ' does not exists.'])
     end
     
     row_summary = row_summary+1; % Summary row

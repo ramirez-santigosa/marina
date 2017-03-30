@@ -34,9 +34,6 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 % - F. Mendoza (March 2017) Update
 
 %% Start-up
-num_days = [31 28 31 30 31 30 31 31 30 31 30 31];
-num_previous_days = [0 31 28 31 30 31 30 31 31 30 31 30];
-
 daily = NaN(size(input_daily));
 monthly = NaN(12,1);
 
