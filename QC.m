@@ -1,29 +1,31 @@
-function [dataqc] = QC(path_fig,data,var,max_rad,cols,tzone,name,offset_empirical)
+function [ dataqc ] = QC(path_fig,data,vars,max_rad,cols,tzone,name,Isc,offset_empirical)
 %QC Creates an ordered, continuous, and complete annual array
 %from the input data (which must be in standard format). Calculates
 %astronomical variables, quality control and creates figures with the QC
 %results of the variables. It takes into account the station time zone and
 %converts to TST to perform astronomical calculations. Output is in UTC.
 %   INPUT:
-%   pathfig: Path where figures are saved
+%   path_fig: Path where figures are saved
 %   data: Standard data structure
-%   var: Logical array that indicates which variables will be included in the QC process [GHI DNI DHI].
+%   vars: Logical array that indicates which variables will be included in the QC process [GHI DNI DHI].
 %   max_rad: Max. solar radiation value for the figures
 %   cols: Columns of the variables in the data matrix
 %   tzone: Specific time zone of the station location
+%   name: Name for figures title of the QC process
+%   Isc: Solar constant [W/m2]
 %   offset_empirical: Just in case the results seems to have timestamp mistakes
 %
 %   OUTPUT:
 %   dataqc: Standard data structure with two additional matrices: .mqc and .astro
 %       dataqc.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI]
 %       dataqc.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
-%   fXXX are arrays with the QC flags of the variable XXX according with
+%   f*** are arrays with the QC flags of the variable *** according with
 %   BSRN procedurement:
 %   0 Fail to pass 1st test: Physically Possible Limits
 %   1 Fail to pass 2nd test: Extremely Rare Limits
 %   2 Fail to pass 3rd test: Comparisons and coherence between variables
-%   3 Pass all tests, data is valid ???
-%   4 !???
+%   3 Fail to pass 4th test: Close enough to calculated values!
+%   4 Pass all tests, data is valid !!!
 %
 % - L. Ramírez (April 2013)
 % - S. Moreno  (June 2014)
@@ -36,8 +38,6 @@ Micolormap = [1     0.2     0.2;...
               1     1       0;...
               0.6   1       0.6;...
               0.3   0.9     0.3];
-
-Isc = 1367; % Solar constant [W/m2]
 
 %% Assigment of the input data
 lat = data.geodata.lat;
@@ -131,7 +131,7 @@ DHIord(pos_obs_INI) = DHI; % In the station time zone
 %% Astronomical calculations
 
 [astro,tst_num,~] = calcula_astro...
-    (days_num_ord,stamp,num_obs,timeZ,lat,lon,offset_empirical); % Function
+    (days_num_ord,stamp,num_obs,timeZ,lat,lon,Isc,offset_empirical); % Function
 
 dj = astro(:,1); % Julian day
 e0 = astro(:,2); % Sun-Earth distance correction factor
@@ -144,12 +144,12 @@ cosz = astro(:,8); % Cosine of the solar zenith angle.
 % i0 = astro(:,9);
 % m = astro(:,10);
 
-% There must be a problem with UTC conversion in  astro function!!!
+% There must be a problem with UTC conversion in astro function!!!
 
 %% Quality Control (BSRN)
 % TEST #1: Physically Possible Limits ------------------------------------
 % Two groups of data are defined:
-% - low: Solar height until 10 degrees. Applicable for Tests #1 y 2
+% - low: Solar elevation angle below 0 degrees. Applicable for Tests #1 y 2
 % - others
 
 % Pre-allocate
@@ -158,7 +158,8 @@ fDNI = zeros(size(DNIord));
 fDHI = zeros(size(DHIord));
 
 % Creating the groups of data
-low = (acos(cosz)*180/pi)>=90; %!Preguntar bajos?
+sZenithA = acos(cosz)*180/pi; % Solar zenith angle. Solar zenith and Solar elevation angles are complementary (alpha=90°-theta)
+low = sZenithA>=90; % alpha<=0°, theta>=90°
 
 % Setting the limits of the variables and groups
 maxG = Isc.*e0*1.5.*((cosz.^12).^0.1)+100;
@@ -172,7 +173,7 @@ maxB = Isc.*e0;
 test1 = (GHIord>=-4 & GHIord<=maxG); fGHI(test1) = 1; clearvars test1
 test1 = (DHIord>=-4 & DHIord<=maxD); fDHI(test1) = 1; clearvars test1
 test1 = (DNIord>=-4 & DNIord<=maxB); fDNI(test1) = 1; clearvars test1
-clearvars  maxG maxD maxB
+clearvars maxG maxD maxB
 
 %% TEST #2: Extremely Rare Limits ----------------------------------------
 % Setting the limits of the variables and groups
@@ -188,15 +189,15 @@ maxB(low) = 10;
 test2 = (GHIord>=-2 & GHIord<=maxG & fGHI==1); fGHI(test2) = 2; clearvars test2
 test2 = (DHIord>=-2 & DHIord<=maxD & fDHI==1); fDHI(test2) = 2; clearvars test2
 test2 = (DNIord>=-2 & DNIord<=maxB & fDNI==1); fDNI(test2) = 2; clearvars test2
-clearvars  maxG maxD maxB
+clearvars low % maxG maxD maxB % Don't clear maximum limits
 
 %% TEST #3: Comparisons ---------------------------------------------------
 % For those values in which this test isn't applicable (measured or calculated
 % GHI < 50 W/m2), applies the conditions of the second test.
 
 % Three groups of data are defined
-% - low: solar height a -3 a 15; GHI may. 50 !!!
-% - high: solar height a may. 15; GHI may. 50 !!!
+% - low: solar elevation between -3 and 15, and GHI>50 W/m2
+% - high: solar elevation higher than 15, and GHI>50 W/m2
 % - others
 
 % CONDITION IMPOSED TO THE DIFFUSE RADIATION
@@ -207,18 +208,17 @@ ffDHI = fDHI; % A temp variable is used to apply a previous condition to the dif
 % to records in which the measured global irradiance is over 50 W/m2.
 
 % Creating the groups with the input measured GHI data
-high = ((acos(cosz)*180/pi)<75 & GHIord>50);
-low = ((acos(cosz)*180/pi)>=75 & (acos(cosz)*180/pi)<93 & GHIord>50);
+high = (sZenithA<75 & GHIord>50); % alpha>15°, theta<75°
+low = (sZenithA>=75 & sZenithA<93 & GHIord>50); % -3°<alpha<=15°, 75°<=theta<93°
 
 % Setting limits
-maxD = zeros(size(DHIord));
-maxD(high) = 1.05*GHIord(high); % For theta_z<75°
-maxD(low) = 1.10*GHIord(low); % For 75°<theta_z<93°
+maxD(high) = 1.05*GHIord(high); % For theta<75°
+maxD(low) = 1.10*GHIord(low); % For 75°<theta<93°
 
 % Flag assigment
 % Those values that fail to pass the test #3.2 are flagged with '2'
 test32 = (DHIord<=maxD & fGHI==2 & fDHI==2 & fDNI==2); ffDHI(test32)=3; clearvars test32
-clearvars high low
+clearvars low high
 
 % CONDITION IMPOSED TO ALL THREE VARIABLES
 % First relationship: measured direct global irradiance is compared with
@@ -228,13 +228,12 @@ clearvars high low
 GHIcalc = DHIord+DNIord.*cosz;
 
 % Creating the groups with the calculated GHI data
-high = ((acos(cosz)*180/pi)<75 & GHIcalc>50);
-low = ((acos(cosz)*180/pi)>=75 & (acos(cosz)*180/pi)<93 & GHIcalc>50);
+high = (sZenithA<75 & GHIcalc>50); % alpha>15°, theta<75°
+low = (sZenithA>=75 & sZenithA<93 & GHIcalc>50); % -3°<alpha<=15°, 75°<=theta<93°
 
 % Setting limits
-maxG = zeros(size(GHIcalc));
-maxG(high) = 1.08.*GHIcalc(high); % For theta_z<75°
-maxG(low) = 1.15.*GHIcalc(low); % For 75°<theta_z<93°
+maxG(high) = 1.08.*GHIcalc(high); % For theta<75°
+maxG(low) = 1.15.*GHIcalc(low); % For 75°<theta<93°
 minG = zeros(size(GHIcalc))-2; % Preguntar por el minimo según paper?!!!
 minG(high) = 0.92.*GHIcalc(high);
 minG(low) = 0.85.*GHIcalc(low);
@@ -245,7 +244,7 @@ test3 = (GHIord>=minG & GHIord<=maxG & fGHI==2 & fDNI==2 & ffDHI==3);
 fGHI(test3) = 3;
 fDHI(test3) = 3;
 fDNI(test3) = 3;
-clearvars test32 high low
+clearvars high low
 
 %% NEW TEST #4: Some impossible were slipping through ---------------------
 % GHI values between GHI calculated +- 50
@@ -285,7 +284,6 @@ axis square
 set(gca,'XTick',0:400:max_rad);
 set(gca,'YTick',0:400:max_rad);
 print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_COHER'))
-% saveas(gcf,strcat(ruta_fig,'\',file_name,'_COHER'),'png');
 
 %% Monthly coherence graphs -----------------------------------------------
 
@@ -324,7 +322,7 @@ for m=1:12
     ylabel('GHI calculated','Fontsize',16);
     grid on;
     print('-djpeg','-opengl','-r350',strcat(path_fig_month,'\',file_name,'_COHER_M',m_str))
-%     saveas(gcf,strcat(ruta_fig_mes,'\',file_name,'_COHER_M',mes_str),'png'); 
+
 end
 
 %% ANNUAL QUALITY MAPS
@@ -353,7 +351,7 @@ matrixW0 = reshape(pos_zero,values_day,[]);
 [y3, x3] = find(matrixW0);
 
 % GHI ANNUAL GRAPH --------------------------------------------------------
-if var(1)==1
+if vars(1)==1
     matrixGHI = reshape(fGHI,values_day,[]);
     
     figure
@@ -379,7 +377,7 @@ if var(1)==1
 end
 
 % DNI ANNUAL GRAPH --------------------------------------------------------
-if var(2)==1
+if vars(2)==1
     matrixDNI = reshape(fDNI,values_day,[]);
     
     figure
@@ -405,7 +403,7 @@ if var(2)==1
 end
 
 % DHI ANNUAL GRAPH --------------------------------------------------------
-if var(3)==1
+if vars(3)==1
     matrixDHI = reshape(fDHI,values_day,[]);
     
     figure
@@ -434,10 +432,6 @@ end
 
 % DATE PROCESSING: Out in TST
 % Centers the instant in the beginning of the period (in days)
-% % date_num_out = tst_num-time_corr-(0.5/(num_obs*24));
-% date_num_out = tst_num+(0.5/(num_obs*24)); % TANZANIA
-% date_vec_out = datevec(date_num_out);
-% % output = [date_vec_out,GHIord,fGHI,DNIord,fDNI,DHIord,fDHI];
 
 % DATE PROCESSING: Out in station local time
 LT_vec = datevec(days_num_ord);

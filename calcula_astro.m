@@ -1,5 +1,5 @@
 function [astro,tst_num,UTC_num] = calcula_astro...
-    (date_num,stamp,num_obs,timeZ,lat,lon,offset_empirical)
+    (date_num,stamp,num_obs,timeZ,lat,lon,Isc,offset_empirical)
 %CALCULA_ASTRO Convert the input hour to TST and calculates in the centered
 %instant.
 %   INPUT:
@@ -9,6 +9,7 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %   timeZ: Time zone of the station location: TST/UTCSXX (S sign, XX shift)
 %   lat: Latitude of the station
 %   lon: Longitude of the station
+%   Isc: Solar constant [W/m2]
 %   offset_empirical: Just in case the results seem to have timestamp mistakes
 %
 %   OUTPUT:
@@ -30,7 +31,6 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 
 %% Intro
 lat_rad = lat*pi/180; % Latitude in radians
-Isc = 1367; % Solar constant [W/m2]
 
 % Centers the instant on the middle of the observation period for
 % astronomical calculations
