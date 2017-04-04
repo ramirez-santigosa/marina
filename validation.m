@@ -59,7 +59,7 @@ end
 res_daily = NaN(365,6); % Always 365!???
 
 for dj = 1:365
-    if leap && dj>59 % Skip February 29th of leap years
+    if leap && dj>=60 % Skip February 29th of leap years
         num_day = dj+1;
     else
         num_day = dj;

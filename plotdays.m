@@ -1,6 +1,19 @@
 function [ dataDays ] = plotdays( iniDay, finalDay, variables, mode )
-%PLOTDAYS Extract and plot the data between two specific days
-%   Detailed explanation goes here
+%PLOTDAYS Extract and plot the data between two specific days of the same
+%year
+%   INPUT:
+%   iniDay: Initial day for plotting.
+%   finalDay: Last day for plotting.
+%   variables: Logic array pointing which radiation variables will be
+%   plotted [GHI DNI DHI]
+%   mode: 'qc' or 'val' for plotting data after Quality Control or
+%   Validation processes. Useful to identify interpolated data during the
+%   validation process
+%
+%   OUTPUT:
+%   dataDays: Array with the radiation values of the days selected
+%   Figure 1: Radiation values of the selected variables along the days
+%   Figures 2 - 4: Each radiation variable with its quality control flag
 
 run('Configuration_BSRN_ASP.m');
 
@@ -39,6 +52,8 @@ switch mode
             load(strcat(path,'\',fileIn2)); % Load of the standard data structure
             mtx2 = dataval.mqc;
         end
+    otherwise
+        error('Mode %s is not valid. Please use ''qc'' or ''val'' modes.', mode)
 end
 
 mtx1 = [mtx1; mtx2]; % Concatenate all years required
@@ -69,14 +84,18 @@ dataDays = mtx1(:,[1:6, colsVars colsfQC]);
 % Plot
 t = datetime(dataDays(:,1:6));
 figure; plot(t,dataDays(:,7:7+length(colsVars)-1));
-legend(leg)
-print('-djpeg','-opengl','-r350','..\OUTPUT\2_QC\RadiationDay')
+legend(leg,'Interpreter','none')
+
+[mm,~] = string_chars_num(finalDay(2),2);
+[dd,~] = string_chars_num(finalDay(3),2);
+date = strcat(num2str(finalDay(1)),mm,dd);
+print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\Radiation','_',mode,'_',date))
 
 for i = 0:length(colsVars)-1
     figure;
     plotyy(t,dataDays(:,7+i),t,dataDays(:,7+length(colsVars)+i))
-    legend(legfQC(i+1,:))
-    print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\2_QC\',legfQC{i+1,2}))
+    legend(legfQC(i+1,:),'Interpreter','none')
+    print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\',legfQC{i+1,2},'_',mode,'_',date))
 end
 
 end
