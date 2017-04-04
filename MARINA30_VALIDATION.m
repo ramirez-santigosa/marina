@@ -24,7 +24,7 @@
 %       validation process flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
 %  (3)  dataval.replaced = Array with the replaced days along the years
 %  (4)  dataval.nonvalid_m = Array with the number of non-valid days in 
-%       each month.
+%       each month
 %
 %       One Excel file with all years validation results:
 %  (1)  Sheet Val_Day: Results of the daily validation of all years
@@ -44,16 +44,15 @@ if ~exist(path_val,'dir')
     mkdir(path_val);
 end
 
-max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 % Preallocation variables for Excel export
-colD = 6; res_daily_ex = zeros(365,(year_end-year_ini+1)*colD);
-colM = 6; res_month_ex = zeros(12,(year_end-year_ini+1)*colM);
-replaced_ex = zeros((year_end-year_ini+1)*12*max_nonvalid,4); idxR = 1;
+colD = 6; res_daily_ex = zeros(365,num_years*colD);
+colM = 6; res_month_ex = zeros(12,num_years*colM);
+replaced_ex = zeros(num_years*12*max_nonvalid,4); idxR = 1;
 
 % Preallocation monthly validation output tables
-Table_missing = zeros(12,year_end-year_ini+1);
-Table_GHI = zeros(12,year_end-year_ini+1);
-Table_DNI = zeros(12,year_end-year_ini+1);
+Table_missing = zeros(12,num_years);
+Table_GHI = zeros(12,num_years);
+Table_DNI = zeros(12,num_years);
 
 for y = year_ini:year_end
     
@@ -77,7 +76,7 @@ for y = year_ini:year_end
     % Replaced days in each year
     replace = [ones(size(dataval.replaced,1),1)*y, dataval.replaced];
     replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
-    idxR = idxR+length(replace);
+    idxR = idxR+size(replace,1);
     % Non-valid days & DNI, GHI validation results
     Table_missing(:,idx+1) = dataval.nonvalid_m(:,1);
     Table_GHI(:,idx+1) = dataval.monthly(:,2);
@@ -89,8 +88,8 @@ replaced_ex(idxR:end,:) = []; % Shrink
 %% Headers for Excel Valiation Report
 
 % Headers of dayly/monthly/yearly validation
-headerD = cell(1,(year_end-year_ini+1)*colD);
-headerM = cell(1,(year_end-year_ini+1)*colM);
+headerD = cell(1,num_years*colD);
+headerM = cell(1,num_years*colM);
 headerY = year_ini:year_end;
 
 for y = year_ini:year_end

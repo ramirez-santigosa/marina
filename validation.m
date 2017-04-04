@@ -1,5 +1,5 @@
 function dataval = validation(dataqc,level,max_nonvalid)
-%VALIDATION Qualifies the data of a year after QC process. A daily and
+%VALIDATION Qualifies the data of one year after QC process. A daily and
 %monthly validation process are executed.
 %   INPUT:
 %   dataqc: Data structure after quality control process
@@ -9,7 +9,7 @@ function dataval = validation(dataqc,level,max_nonvalid)
 %   order to be considered a valid month.
 %
 %   OUTPUT:
-%   dataval: Input data structure with 4 aditional fields
+%   dataval: Input QC data structure with 4 aditional fields
 %       dataval.daily: Saves daily radiation values (Wh/m2) and the flags of
 %       the daily validation process. Columns:
 %       1 - # of the day in the month (Dia Juliano???)
@@ -37,9 +37,9 @@ function dataval = validation(dataqc,level,max_nonvalid)
 
 %% Start-up
 dataval = dataqc;
-lat = dataval.geodata.lat;
-lat_rad = lat*pi/180;
-num_obs = dataval.timedata.num_obs;
+lat = dataval.geodata.lat; % Latitude
+lat_rad = lat*pi/180; % Latitude in radians
+num_obs = dataval.timedata.num_obs; % Number of observations per hour
 year = dataval.mqc(1,1); % Get year from quality control structure
 
 %% Daily Validation
@@ -79,16 +79,16 @@ for dj = 1:365
     fDNI = dataval.mqc(lin_ini:lin_end,10);
 
     % Extraction of the astronomical values
-    w   = dataval.astro(lin_ini:lin_end,6); % Array of Hour angle along the day
+    w = dataval.astro(lin_ini:lin_end,6); % Array of Hour angle along the day
     dec = dataval.astro(lin_ini,7); % Declination of the first instant of the day
-    wsr  = acos(-tan(dec)*tan(lat_rad)); % Scalar
-    wss  = -wsr; % Scalar
-%     i0  = dataval.astro(lin_ini:lin_end,9); % 
+    wsr = acos(-tan(dec)*tan(lat_rad)); % Scalar sunrise
+    wss = -wsr; % Scalar sunset
+%     i0 = dataval.astro(lin_ini:lin_end,9); % 
 
     % During daytime hourly angles are less than sunrise angle (which is
     % positive) and greater than sunset angle (negative)
     pos_day = (w<wsr & w>wss); % Sun above horizon line
-
+    
     % valida_days Function tests the validity of each day for each variable.
     % A day is valid if has less than an hour of abnormal data.
     [seriesG,flagG,dailyG,flagdG] = valida_days(pos_day,GHI,fGHI,num_obs,level);

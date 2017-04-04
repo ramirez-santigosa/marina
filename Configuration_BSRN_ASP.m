@@ -33,23 +33,18 @@ time_stamp = 0; % Values: 0/0.5/1 related to beginning/mid/end
 num_obs = 60; % Number of observations per hour
 no_data = NaN; % No data value
 
-%% General info
-num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
-num_previous_days = [0 31 28 31 30 31 30 31 31 30 31 30]; % Number of days of the previous month
-num_days_prev = [0 31 59 90 120 151 181 212 243 273 304 334]; % Number of days previous to the month start
-
-Isc = 1367; % Solar constant [W/m2]
-
 %% Format
 header = {'YYYY', 'MM', 'DD', 'HH', 'mm', 'ss', 'GHI', 'DNI', 'DHI'}; % Headers of the standard structure
 
 %% QC
 vars = logical([1 1 1]); % Variables for QC process [GHI DNI DHI] 1(true)/0(false)
+Isc = 1367; % Solar constant [W/m2]
 offset_empirical = 0; % Just in case the results seem to have timestamp mistakes
 max_rad = 1600; % Max. solar radiation value for the figures
 
 %% Validation
-level = 1; % Level for validation. Defines since which flag value a day is valid according to the QC flags
+level = 4; % Level for validation. Defines since which flag value a day is valid according to the QC flags
+max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 
 %% Candidates
 num_pre = 5; % Number of pre-selected candidates. Must be < number of years

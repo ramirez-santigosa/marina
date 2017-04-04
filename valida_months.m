@@ -34,6 +34,9 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 % - F. Mendoza (March 2017) Update
 
 %% Start-up
+num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
+num_previous_days = [0 31 59 90 120 151 181 212 243 273 304 334]; % Number of days previous to the month start
+
 daily = NaN(size(input_daily));
 monthly = NaN(12,1);
 
@@ -44,7 +47,7 @@ nonvalid_m = zeros(12,1); % Pre-allocation (# of months)
 %% Loop through months
 for m = 1:12
     clear days_m
-    first = 1+sum(num_previous_days(1:m)); % First and last rows of each month
+    first = num_previous_days(m)+1; % First and last rows of each month
     last = first+num_days(m)-1;
     
     % Each month block
@@ -58,7 +61,7 @@ for m = 1:12
     % Rare but possible, daily values == 0
     pos_nvDNI = fDNI==0; % Not valid flag ¡¡¡Value or flag?
     DNI(pos_nvDNI) = NaN;
-    num_nvDNI = sum(pos_nvDNI);
+    num_nvDNI = sum(pos_nvDNI); % Number of non-valid days according DNI QC flag
     
     % Global irradiance case
     % In this case, it isn't possible that daily values == 0
@@ -68,52 +71,52 @@ for m = 1:12
     
     if num_nvDNI==0 % If all days in DNI series are valid -----------------
         rad_monthDNI = sum(DNI); % Monthly DNI is sum up of the daily values
-        f_mvalDNI = 1; % Monthly flag !
+        f_mvalDNI = 1; % Monthly DNI flag !!!
         
         % GHI treatment
         if num_nvGHI==0
             rad_monthGHI = sum(GHI); % Monthly GHI is sum up of the daily values
-            f_mvalGHI = 1;
+            f_mvalGHI = 1; % Monthly GHI flag !!!
         else
             % In this case, all daily DNI values are valid but some GHI
             % values aren't. GHI values cannot be replaced.
             rad_monthGHI = NaN;
-            f_mvalGHI = 3; %!!! Que significaría?
+            f_mvalGHI = 3; % Monthly GHI flag !!! Que significaría?
         end
         
     elseif num_nvDNI<=max_nonvalid % If DNI non-valid days are less than the allowed ---
-        valid = ~isnan(DNI); % Look for valid days
-        rad_mean = sum(DNI(valid))/sum(valid); % Calculates monthly mean of the valid days
+        validDNI = ~isnan(DNI); % Look for valid days
+        rad_mean = sum(DNI(validDNI))/sum(validDNI); % Calculates monthly mean of the valid days
         [~, i_min_dist] = min(abs(DNI-rad_mean)); % Index of the day with the closest value to the mean value
         % Lo de la norma de +-5 días del día subtituido !???
         days_m(pos_nvDNI) = days_m(i_min_dist); % Replace non-valid days with the closest to the mean
         DNI(pos_nvDNI) = DNI(i_min_dist);
         rad_monthDNI = sum(DNI); % Monthly DNI is sum up of the daily values
-        f_mvalDNI = 1;
+        f_mvalDNI = 1; % Monthly DNI flag !!!
         
         % GHI treatment
         % Look for GHI valid days within DNI valid indices. GHI valid values
         % must be different of zero.
-        validGHI = (~isnan(GHI(valid)) & GHI(valid)~=0);
+        validGHI = (~isnan(GHI(validDNI)) & GHI(validDNI)~=0);
         
-        if sum(validGHI)==sum(valid) % Equal number of valid days !!!Pero no implica que sean los mismos?
+        if sum(validGHI)==sum(validDNI) % Equal number of valid days !!!Pero no implica que sean los mismos?
             % The replacements did in DNI treatment are repeated in GHI
             % treatment, it is, GHI values in the positions of non-valid
             % days in DNI series are replaced with the GHI value in the
             % position of the closest to the mean DNI daily value.
             GHI(pos_nvDNI) = GHI(i_min_dist);
             rad_monthGHI = sum(GHI); % Monthly GHI is sum up of the daily values
-            f_mvalGHI = 1; % !!!
+            f_mvalGHI = 1; % Monthly GHI flag !!!
         else
             % In this case, some GHI values aren't acceptable. GHI values cannot be replaced.
             rad_monthGHI = NaN;
-            f_mvalGHI = 5; % !!!
+            f_mvalGHI = 5; % Monthly GHI flag !!!
         end
         
         % Identifies replacements
         dummy = 1:length(pos_nvDNI); % Dummy array
-        replaced(num_r+1:num_r+num_nvDNI,1) = ones(sum(pos_nvDNI),1)*m; % Month
-        replaced(num_r+1:num_r+num_nvDNI,2) = ones(sum(pos_nvDNI),1)*days_m(i_min_dist); % Origin day
+        replaced(num_r+1:num_r+num_nvDNI,1) = ones(num_nvDNI,1)*m; % Month
+        replaced(num_r+1:num_r+num_nvDNI,2) = ones(num_nvDNI,1)*days_m(i_min_dist); % Origin day
         replaced(num_r+1:num_r+num_nvDNI,3) = dummy(pos_nvDNI); % Replaced days
         num_r = num_r+num_nvDNI; % Update global number of replacements in a year
         
