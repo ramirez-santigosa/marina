@@ -31,6 +31,10 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 %       3 - Replaced day
 %   replaced_month: Number of replacements in each month
 %
+%   Monthly validation flags:
+%   0: Non-valid month...
+%   1: ... TODO
+%
 % - F. Mendoza (March 2017) Update
 
 %% Start-up

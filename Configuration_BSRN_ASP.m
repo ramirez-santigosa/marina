@@ -18,7 +18,6 @@
 % Specific years of threatment
 year_ini = 1995; % Initial year of data
 year_end = 2014; % Final year of data. Use the same initial year in case of 1 year
-num_years = year_end-year_ini+1; % Number of years
 
 % Specific for Alice Spring
 tzone = 9.5; % Specific time zone of the station location
@@ -32,6 +31,10 @@ ref_temp = 'UTC+0'; % Time reference in which data is acquired. TST/UTCSXX (S si
 time_stamp = 0; % Values: 0/0.5/1 related to beginning/mid/end
 num_obs = 60; % Number of observations per hour
 no_data = NaN; % No data value
+
+%% General
+num_years = year_end-year_ini+1; % Number of years
+num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
 
 %% Format
 header = {'YYYY', 'MM', 'DD', 'HH', 'mm', 'ss', 'GHI', 'DNI', 'DHI'}; % Headers of the standard structure
@@ -47,7 +50,11 @@ level = 4; % Level for validation. Defines since which flag value a day is valid
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 
 %% Candidates
-num_pre = 5; % Number of pre-selected candidates. Must be < number of years
+num_cand = 5; % Number of candidates. Must be <= than the number of years
+if num_cand > num_years
+    error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
+end
+nbins = 10; % Number of bins for cumulative distribution function
 
 %% Paths definition
 path_in = '..\BSRNData'; % Input data in annual folders inside: .\aaaa\

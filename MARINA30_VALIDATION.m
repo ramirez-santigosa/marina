@@ -131,23 +131,18 @@ warning off MATLAB:xlswrite:AddSheet
 fprintf('Writing Excel file %s \n',namef);
 
 % DAILY VALIDATION RESULTS ------------------------------------------------
-xlswrite(file_xls,headerD,'Val_Day','A1'); % Write the headers
-xlswrite(file_xls,round(res_daily_ex),'Val_Day','A2'); % Write the results
+% One cell per sheet (just one call of the xlswrite function per sheet)
+xlswrite(file_xls,[headerD; num2cell(round(res_daily_ex))],'Val_Day','A1'); % Write the headers & results
 
 % MONTHLY VALIDATION RESULTS ----------------------------------------------
-xlswrite(file_xls,headerM,'Val_Month','A1'); % Write the headers
-xlswrite(file_xls,round(res_month_ex),'Val_Month','A2'); % Write the results
+xlswrite(file_xls,[headerM; num2cell(round(res_month_ex))],'Val_Month','A1'); % Write the headers & results
 
 % MONTHLY GHI & DNI RESULTS AFTER VALIDATION ------------------------------
-xlswrite(file_xls,headerY,'GHI', 'A1'); % Write the headers
-xlswrite(file_xls,round(Table_GHI),'GHI','A2'); % Write the results
+xlswrite(file_xls,[headerY; round(Table_GHI)],'GHI','A1'); % Write the headers & results
 
-xlswrite(file_xls,headerY,'DNI','A1'); % Write the headers
-xlswrite(file_xls,round(Table_DNI),'DNI','A2'); % Write the results
+xlswrite(file_xls,[headerY; round(Table_DNI)],'DNI','A1'); % Write the headers & results
 
 % NUMBER OF NON-VALID AND REPLACED DAYS PER MONTH AND YEAR ----------------
-xlswrite(file_xls,headerY,'#_NonValid','A1');
-xlswrite(file_xls,round(Table_missing),'#_NonValid','A2');
+xlswrite(file_xls,[headerY; round(Table_missing)],'#_NonValid','A1'); % Write the headers & results
 
-xlswrite(file_xls,hReplaced,'Replaced','A1');
-xlswrite(file_xls,replaced_ex,'Replaced','A2');
+xlswrite(file_xls,[hReplaced; num2cell(replaced_ex)],'Replaced','A1'); % Write the headers & results
