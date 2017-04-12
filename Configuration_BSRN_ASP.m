@@ -34,7 +34,7 @@ no_data = NaN; % No data value
 
 %% General
 num_years = year_end-year_ini+1; % Number of years
-num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
+num_days_m = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
 
 %% Format
 header = {'YYYY', 'MM', 'DD', 'HH', 'mm', 'ss', 'GHI', 'DNI', 'DHI'}; % Headers of the standard structure

@@ -17,7 +17,8 @@
 % ..\OUTPUT\3_VALIDATION
 %       One Matlab file per year: dataval i.e. 'ASP00-BOM-01-YYYY_VAL'
 %       Each file contains the structured variable 'dataval'
-%       Same as "dataqc" but adding four fields
+%       Same as "dataqc" but adding four fields and updating 'mqc' matrix
+%       if some data is interpolated
 %  (1)  dataval.daily = Daily radiation values (Wh/m2) and the daily
 %       validation process flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
 %  (2)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
@@ -85,7 +86,7 @@ end
 
 replaced_ex(idxR:end,:) = []; % Shrink
 
-%% Headers for Excel Valiation Report
+%% Headers for Excel Validation Report
 
 % Headers of dayly/monthly/yearly validation
 headerD = cell(1,num_years*colD);

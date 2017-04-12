@@ -5,7 +5,9 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 % mean value. DNI is the main variable for determining replacements.
 %   INPUT:
 %   input_daily: Results of the daily validation of the year (output of the
-%   'valida_days' function). These results always consider 365 days per year.
+%   'valida_days' function for all days in one year). These results always 
+%   consider 365 days per year.
+%       [day dailyG flagdG day dailyB flagdB] (6X365)
 %   max_nonvalid: Maximum number of allowed non-valid days in a month in
 %   order to be considered a valid month.
 %
@@ -39,10 +41,10 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 
 %% Start-up
 num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
-num_previous_days = [0 31 59 90 120 151 181 212 243 273 304 334]; % Number of days previous to the month start
+num_previous_days = [0 cumsum(num_days(1:end-1))]; % Number of days previous to the month start
 
 daily = NaN(size(input_daily));
-monthly = NaN(12,1);
+colM = 6; monthly = NaN(12,colM);
 
 num_r = 0; % Number of replacements
 replaced = zeros(12*max_nonvalid,3); % Pre-allocation (max number of replacements in a year)

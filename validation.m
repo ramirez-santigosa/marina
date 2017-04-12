@@ -12,7 +12,7 @@ function dataval = validation(dataqc,level,max_nonvalid)
 %   dataval: Input QC data structure with 4 aditional fields
 %       dataval.daily: Saves daily radiation values (Wh/m2) and the flags of
 %       the daily validation process. Columns:
-%       1 - # of the day in the month (Dia Juliano???)
+%       1 - # of the day in the month
 %       2 - Daily GHI (Wh/m2). NaN if it isn't valid
 %       3 - Flag daily GHI validation
 %       4 - # of the day in the month
@@ -56,7 +56,7 @@ end
 % Pre-allocation of validated daily data. Results of the daily validation
 % process only include 365 days, February 29th of leap years is skipped.
 % [dj GHI flag_daily_validation_GHI dj DNI flag_daily_validation_DNI] => 6 columns per year
-res_daily = NaN(365,6); % Always 365!???
+colD = 6; res_daily = NaN(365,colD); % Always 365!???
 
 for dj = 1:365
     if leap && dj>=60 % Skip February 29th of leap years
@@ -69,7 +69,7 @@ for dj = 1:365
     lin_ini = (num_day-1)*24*num_obs+1;
     lin_end = num_day*24*num_obs;
     day = dataval.mqc(lin_ini,3); % Get number of the day in the month
-
+    
     % Extraction of the dayly values
 %     hour = dataval.mqc(lin_ini:lin_end,4);
 %     min  = dataval.mqc(lin_ini:lin_end,5);
