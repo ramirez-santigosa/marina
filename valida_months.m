@@ -40,8 +40,8 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 % - F. Mendoza (March 2017) Update
 
 %% Start-up
-num_days = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
-num_previous_days = [0 cumsum(num_days(1:end-1))]; % Number of days previous to the month start
+num_days_m = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
+num_previous_days = [0 cumsum(num_days_m(1:end-1))]; % Number of days previous to the month start
 
 daily = NaN(size(input_daily));
 colM = 6; monthly = NaN(12,colM);
@@ -54,7 +54,7 @@ nonvalid_m = zeros(12,1); % Pre-allocation (# of months)
 for m = 1:12
     clear days_m
     first = num_previous_days(m)+1; % First and last rows of each month
-    last = first+num_days(m)-1;
+    last = first+num_days_m(m)-1;
     
     % Each month block
     days_m = input_daily(first:last,1); % Day in the month
