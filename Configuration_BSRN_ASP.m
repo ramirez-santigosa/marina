@@ -48,6 +48,7 @@ max_rad = 1600; % Max. solar radiation value for the figures
 %% Validation
 level = 4; % Level for validation. Defines since which flag value a day is valid according to the QC flags
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
+max_dist = 5; % Maximum distance in the days used for the sustitution
 
 %% Candidates
 num_cand = 5; % Number of candidates. Must be <= than the number of years

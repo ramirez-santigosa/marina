@@ -1,20 +1,22 @@
-function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_nonvalid)
+function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_nonvalid,max_dist)
 %VALIDA_MONTHS Evaluates the validity of each month of a complete year (365
 % days). A month is valid if has as much as 'max_nonvalid' non-valid days.
 % On valid months, non-valid days are replaced with the closest day to the
 % mean value. DNI is the main variable for determining replacements.
 %   INPUT:
 %   input_daily: Results of the daily validation of the year (output of the
-%   'valida_days' function for all days in one year). These results always 
+%   'valida_days' function for all days in one year). These results always
 %   consider 365 days per year.
-%       [day dailyG flagdG day dailyB flagdB] (6X365)
+%       [day dailyG flagdG day dailyB flagdB] (365X6)
 %   max_nonvalid: Maximum number of allowed non-valid days in a month in
 %   order to be considered a valid month.
+%   max_dist: Maximum distance in the days used for the sustitution
+%   (+-max_dist).
 %
 %   OUTPUT:
 %   daily: Updated daily radiation values, if replacements were made.
 %   Columns:
-%       1 - # of the day in the month (Dia Juliano???)
+%       1 - # of the day in the month
 %       2 - Daily GHI (Wh/m2). NaN if it isn't valid
 %       3 - Flag daily GHI validation
 %       4 - # of the day in the month
@@ -28,10 +30,10 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 %       5 - Monthly DNI (kWh/m2). NaN if it isn't valid
 %       6 - Flag monthly DNI validation
 %   replaced: Replacements in a year. Columns:
-%       1 - Month 
+%       1 - Month
 %       2 - Origin day
 %       3 - Replaced day
-%   replaced_month: Number of replacements in each month
+%   nonvalid_m: Number of non-valid days in each month
 %
 %   Monthly validation flags:
 %   0: Non-valid month...
@@ -93,10 +95,39 @@ for m = 1:12
     elseif num_nvDNI<=max_nonvalid % If DNI non-valid days are less than the allowed ---
         validDNI = ~isnan(DNI); % Look for valid days
         rad_mean = sum(DNI(validDNI))/sum(validDNI); % Calculates monthly mean of the valid days
-        [~, i_min_dist] = min(abs(DNI-rad_mean)); % Index of the day with the closest value to the mean value
-        % Lo de la norma de +-5 días del día subtituido !???
-        days_m(pos_nvDNI) = days_m(i_min_dist); % Replace non-valid days with the closest to the mean
-        DNI(pos_nvDNI) = DNI(i_min_dist);
+        
+        % Look for the substitution days on the range +-max_dist days
+        nvDNI_days = find(pos_nvDNI); % Non-valis days in the month
+        replaced_m = zeros(num_nvDNI,3); % To save replacements in the month
+        
+        for i = 1:num_nvDNI
+            range = false(num_days_m(m),1); % Init range (logic array)
+            first_range = nvDNI_days(i)-max_dist; % Limits of the range
+            last_range = nvDNI_days(i)+max_dist;
+            if first_range<=0 % Verify that the limits are inside the month
+                first_range = 1;
+            end
+            if last_range>num_days_m(m)
+                last_range = num_days_m(m);
+            end
+            
+            range(first_range:last_range) = true; % Range of days for the substitution
+            range = range & validDNI; % Substract non-valids days in the range
+            days_range = days_m(range); % Number of the days in the range
+            
+            if sum(range)==0 % Check if there are valid days for substitution
+                warning('There are not valid days for substitution: Month %d, Day %d\n',m,nvDNI_days(i));
+                fprintf('A large range than (+-%d) is needed.\n',max_dist);
+                continue
+            end
+            
+            [~, i_min_dist] = min(abs(DNI(range)-rad_mean)); % Index of the day with the closest value to the mean value
+            
+            days_m(nvDNI_days(i)) = days_range(i_min_dist); % Replace non-valid day with the closest to the mean
+            DNI(nvDNI_days(i)) = DNI(days_range(i_min_dist)); % Update DNI value
+            fDNI(nvDNI_days(i)) = 2; % Update the daily flag
+            replaced_m(i,:) = [m days_range(i_min_dist) nvDNI_days(i)]; % Save substitutions in the month
+        end
         rad_monthDNI = sum(DNI); % Monthly DNI is sum up of the daily values
         f_mvalDNI = 1; % Monthly DNI flag !!!
         
@@ -110,7 +141,8 @@ for m = 1:12
             % treatment, it is, GHI values in the positions of non-valid
             % days in DNI series are replaced with the GHI value in the
             % position of the closest to the mean DNI daily value.
-            GHI(pos_nvDNI) = GHI(i_min_dist);
+            GHI(pos_nvDNI) = GHI(replaced_m(:,2));
+            fGHI(pos_nvDNI) = 2; % Update the daily flag
             rad_monthGHI = sum(GHI); % Monthly GHI is sum up of the daily values
             f_mvalGHI = 1; % Monthly GHI flag !!!
         else
@@ -119,12 +151,9 @@ for m = 1:12
             f_mvalGHI = 5; % Monthly GHI flag !!!
         end
         
-        % Identifies replacements
-        dummy = 1:length(pos_nvDNI); % Dummy array
-        replaced(num_r+1:num_r+num_nvDNI,1) = ones(num_nvDNI,1)*m; % Month
-        replaced(num_r+1:num_r+num_nvDNI,2) = ones(num_nvDNI,1)*days_m(i_min_dist); % Origin day
-        replaced(num_r+1:num_r+num_nvDNI,3) = dummy(pos_nvDNI); % Replaced days
-        num_r = num_r+num_nvDNI; % Update global number of replacements in a year
+        % Save replacements along the year
+        replaced(num_r+1:num_r+num_nvDNI,:) = replaced_m;
+        num_r = num_r+num_nvDNI; % Update global number of replacements in the year
         
     else % Number of non-valid days is greater than the allowed -----------
         rad_monthDNI = NaN;

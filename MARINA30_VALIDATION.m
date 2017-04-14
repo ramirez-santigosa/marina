@@ -17,24 +17,29 @@
 % ..\OUTPUT\3_VALIDATION
 %       One Matlab file per year: dataval i.e. 'ASP00-BOM-01-YYYY_VAL'
 %       Each file contains the structured variable 'dataval'
-%       Same as "dataqc" but adding four fields and updating 'mqc' matrix
-%       if some data is interpolated
-%  (1)  dataval.daily = Daily radiation values (Wh/m2) and the daily
+%       Same as "dataqc" but adding five fields and updating 'mqc' if some
+%       data is interpolated in the daily validation or if some days are
+%       replaced in the monthly validation. February 29th of leap years is
+%       trimmed in 'mqc' and 'astro' matrices. Added fields:
+%  (1)  dataval.interp: Saves the number of interpolated data in each day
+%       for GHI and DNI. It is a cell with two matrices.
+%  (2)  dataval.daily = Daily radiation values (Wh/m2) and the daily
 %       validation process flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
-%  (2)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
+%  (3)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
 %       validation process flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
-%  (3)  dataval.replaced = Array with the replaced days along the years
-%  (4)  dataval.nonvalid_m = Array with the number of non-valid days in 
+%  (4)  dataval.replaced = Array with the replaced days along the years
+%  (5)  dataval.nonvalid_m = Array with the number of non-valid days in 
 %       each month
 %
 %       One Excel file with all years validation results:
-%  (1)  Sheet Val_Day: Results of the daily validation of all years
-%  (2)  Sheet Val_Month: Results of the monthly validation of all years
-%  (3)  Sheet GHI: Summary of the monthly GHI values (kWh/m2) of each year
-%  (4)  Sheet DNI: Summary of the monthly DNI values (kWh/m2) of each year
-%  (5)  Sheet #_NonValid: Summary of the number of non-valid days in each
+%  (1)  Sheet Interpol: Summary of the interpolated data in each day
+%  (2)  Sheet Val_Day: Results of the daily validation of all years
+%  (3)  Sheet Val_Month: Results of the monthly validation of all years
+%  (4)  Sheet GHI: Summary of the monthly GHI values (kWh/m2) of each year
+%  (5)  Sheet DNI: Summary of the monthly DNI values (kWh/m2) of each year
+%  (6)  Sheet #_NonValid: Summary of the number of non-valid days in each
 %       month and year
-%  (6)  Sheet Replaced: Summary of the replaced days pointing out the
+%  (7)  Sheet Replaced: Summary of the replaced days pointing out the
 %       origin day and the replaced day
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -48,6 +53,7 @@ end
 % Preallocation variables for Excel export
 colD = 6; res_daily_ex = zeros(365,num_years*colD);
 colM = 6; res_month_ex = zeros(12,num_years*colM);
+interpolB_ex = zeros(num_years*365,4); idxI = 1;
 replaced_ex = zeros(num_years*12*max_nonvalid,4); idxR = 1;
 
 % Preallocation monthly validation output tables
@@ -67,23 +73,28 @@ for y = year_ini:year_end
     
     load(strcat(path_qc,'\',name_out_QC));
     
-    dataval = validation(dataqc,level,max_nonvalid); % Function Daily and Monthly validation
+    dataval = validation(dataqc,level,max_nonvalid,max_dist); % Function Daily and Monthly validation
     save(strcat(path_val,'\',name_out_VAL),'dataval'); % Save structure
     
     % Save of validation results for Excel recording
     idx = y-year_ini;
     res_daily_ex(:,idx*colD+1:(idx+1)*colD) = dataval.daily;
     res_month_ex(:,idx*colM+1:(idx+1)*colM) = dataval.monthly;
+    % Interpolated data in each year
+    n_inter = size(dataval.interp{2},1);
+    interpolB_ex(idxI:idxI+n_inter-1,:) = dataval.interp{2};
+    idxI = idxI+n_inter;
     % Replaced days in each year
-    replace = [ones(size(dataval.replaced,1),1)*y, dataval.replaced];
-    replaced_ex(idxR:idxR+size(replace,1)-1,:) = replace;
-    idxR = idxR+size(replace,1);
-    % Non-valid days & DNI, GHI validation results
+    n_sub = size(dataval.replaced,1);
+    replaced_ex(idxR:idxR+n_sub-1,:) = dataval.replaced;
+    idxR = idxR+n_sub;
+    % Non-valid days, GHI & DNI validation results
     Table_missing(:,idx+1) = dataval.nonvalid_m(:,1);
     Table_GHI(:,idx+1) = dataval.monthly(:,2);
     Table_DNI(:,idx+1) = dataval.monthly(:,5);
 end
 
+interpolB_ex(idxI:end,:) = []; % Shrink
 replaced_ex(idxR:end,:) = []; % Shrink
 
 %% Headers for Excel Validation Report
@@ -116,12 +127,16 @@ for y = year_ini:year_end
     
 end
 
+hInterpB = {'Year','Month','Origin day','# data interpolated'}; % Headers replaced days
 hReplaced = {'Year','Month','Origin day','Replaced day'}; % Headers replaced days
 
 %% Writing Validation Report in Excel
 
+if isempty(interpolB_ex)
+    interpolB_ex = '####';
+end
 if isempty(replaced_ex)
-    replaced_ex='####';
+    replaced_ex = '####';
 end
 
 file_xls = strcat(path_val,'\',namef,'.xlsx');
@@ -131,8 +146,11 @@ warning off MATLAB:xlswrite:AddSheet
 
 fprintf('Writing Excel file %s \n',namef);
 
-% DAILY VALIDATION RESULTS ------------------------------------------------
+% INTERPOLATED DAYS PER MONTH AND YEAR ------------------------------------
 % One cell per sheet (just one call of the xlswrite function per sheet)
+xlswrite(file_xls,[hInterpB; num2cell(interpolB_ex)],'Interpol','A1'); % Write the headers & results
+
+% DAILY VALIDATION RESULTS ------------------------------------------------
 xlswrite(file_xls,[headerD; num2cell(round(res_daily_ex))],'Val_Day','A1'); % Write the headers & results
 
 % MONTHLY VALIDATION RESULTS ----------------------------------------------

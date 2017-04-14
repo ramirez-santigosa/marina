@@ -436,8 +436,7 @@ end
 % DATE PROCESSING: Out in station local time
 LT_vec = datevec(days_num_ord);
 output = [LT_vec GHIord fGHIF DNIord fDNIF DHIord fDHIF];
-pos_nodata = (isnan(output));
-output(pos_nodata) = -999;
+% pos_nodata = (isnan(output)); output(pos_nodata) = -999;
 
 data.timedata.timezone = timeZ;
 data.timedata.stamp = 0;

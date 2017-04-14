@@ -1,4 +1,4 @@
-function [output_obs,flag,daily,f_val] = valida_days(pos_day,dat,flag,num_obs,level)
+function [output_obs,flag,daily,f_val,interpolated] = valida_days(pos_day,dat,flag,num_obs,level)
 %VALIDA_DAYS Evaluates the validity of a daily input data. A day is valid
 %if has less than an hour of abnormal data. In that case abnormal data is
 %replaced by interpolated data.
@@ -16,6 +16,7 @@ function [output_obs,flag,daily,f_val] = valida_days(pos_day,dat,flag,num_obs,le
 %   flag: Updated quality control flag in the case of interpolated data
 %   daily: Value of the daily radiation or NaN if it isn't valid
 %   f_val: Flag of the dayly validation process 0: Non-valid, 1: Valid, 2: Valid and value different of 0
+%   interpolated: Number of interpolated data in the day
 %
 % - F. Mendoza (March 2017) Update
 
@@ -39,6 +40,7 @@ dat(val_pos_after_sunset) = 0;
 bads = pos_day & ~valids;
 
 %% Day validation and gap filling (interpolation)
+interpolated = 0; % Init variable
 if sum(bads)==0 % No bads at all
     daily = round(sum(dat(pos_day))/num_obs); % W/m2 per hour
     f_val = 1; % Valid day
@@ -49,6 +51,7 @@ elseif sum(bads) <= num_obs % Less than one not valid hour in the day (Interpola
     % Once interpolated, calculate daily radiation
     daily = round(sum(dat(pos_day))/num_obs); % Wh/m2
     f_val = 1; % Valid day
+    interpolated = sum(bads); % Save number of interpolated data
 else % More that one not valid hour in the day
     daily = NaN;
     f_val = 0; % Non-valid day
