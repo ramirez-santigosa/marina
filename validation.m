@@ -174,7 +174,7 @@ for i = 1:size(replaced,1)
     dataval.mqc(lin_ini_repl:lin_end_repl,7) = dataval.mqc(lin_ini_orig:lin_end_orig,7); % GHI
     dataval.mqc(lin_ini_repl:lin_end_repl,8) = dataval.mqc(lin_ini_orig:lin_end_orig,8); % Flag QC GHI
     dataval.mqc(lin_ini_repl:lin_end_repl,9) = dataval.mqc(lin_ini_orig:lin_end_orig,9); % DNI
-    dataval.mqc(lin_ini_repl:lin_end_repl,10)= dataval.mqc(lin_ini_orig:lin_end_orig,10); % Flag DNI
+    dataval.mqc(lin_ini_repl:lin_end_repl,10)= dataval.mqc(lin_ini_orig:lin_end_orig,10); % Flag QC DNI
 end
 
 end

@@ -64,5 +64,6 @@ end
 %% Output
 output_obs = zeros(24*num_obs,1);
 output_obs(pos_day) = dat(pos_day);
+flag(~pos_day & flag<2) = 2; % Update of the quality control flag of the data during night
 
 end

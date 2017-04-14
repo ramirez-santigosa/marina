@@ -29,6 +29,17 @@ fileIn2 = [loc '00-' owner_station '-' num '-' ID2 '_VAL'];
 if y2==y1 % Same year
     load(strcat(path,'\',fileIn1)); % Load of the standard data structure
     mtx1 = dataval.mqc;
+    
+    if mod(y1,4)~=0
+        leap = false; % Common year
+    elseif mod(y1,100)~=0
+        leap = true; % Leap year
+    elseif mod(y1,400)~=0
+        leap = false; % Common year
+    else
+        leap = true; % Leap year
+    end
+    
 else % Several years TODO
     load(strcat(path,'\',fileIn1)); % Load of the standard data structure after QC
     mtx1 = dataval.mqc;
@@ -62,17 +73,18 @@ dataDaysVal = mtx1(:,[1:6, colsVars colsfQC]);
 
 % Plot
 t = (datetime([iniDay 0 0 0]):minutes(60/num_obs):datetime([finalDay 23 60-60/num_obs 0]))';
-Feb29_1a = datetime([y1 2 29 0 0 0]); Feb29_1b = datetime([y1 2 29 23 60-60/num_obs 0]);
-Feb29_2a = datetime([y2 2 29 0 0 0]); Feb29_2b = datetime([y2 2 29 23 60-60/num_obs 0]);
-f29 = (t>=Feb29_1a & t<=Feb29_1b) | (t>=Feb29_2a & t<=Feb29_2b);
-t = t(~f29);
+if leap
+    Feb29a = datetime([y1 2 29 0 0 0]); Feb29b = datetime([y1 2 29 23 60-60/num_obs 0]);
+    f29 = t>=Feb29a & t<=Feb29b;
+    t = t(~f29);
+end
 figure; plot(t,dataDaysVal(:,7:7+length(colsVars)-1)); title('Validation')
 legend(leg,'Interpreter','none'), xlabel('Time'), ylabel('Irradiance [W/m2]')
 
 [mm,~] = string_chars_num(finalDay(2),2);
 [dd,~] = string_chars_num(finalDay(3),2);
 date = strcat(num2str(finalDay(1)),mm,dd); module = 'val';
-print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\Radiation','_',date,'_',module))
+print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\figures\Radiation','_',date,'_',module))
 
 for i = 0:length(colsVars)-1
     figure;
@@ -81,10 +93,11 @@ for i = 0:length(colsVars)-1
     xlabel('Time'), ylabel('Irradiance [W/m2]')
     yyaxis right
     qcf = dataDaysVal(:,7+length(colsVars)+i);
-    plot(t,qcf), title(strcat(leg(i+1), ' Validation'))
-    set(gca,'YTick',min(qcf):max(qcf)), ylabel('Quality Control Flag')
+    plot(t,qcf,'--'), title(strcat(leg(i+1), ' Validation'))
+    ylabel('Quality Control Flag')
+    set(gca,'YLim',[0 max(qcf)],'YTick',0:max(qcf))
     legend(legfQC(i+1,:),'Interpreter','none')
-    print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\',legfQC{i+1,2},'_',date,'_',module))
+    print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\figures\',legfQC{i+1,2},'_',date,'_',module))
 end
 
 end
