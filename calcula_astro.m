@@ -14,16 +14,16 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %
 %   OUTPUT:
 %   astro: 10 columns vector [dj e0 ang_day et tst_hours w dec cosz i0 m]
-%       dj: Julian day (ordinal day) !???
-%       e0: Sun-Earth distance correction factor
-%       ang_day: Day angle
-%       et: Equation of time
-%       tst_hours: 
-%       w: Hour angle [radians]
-%       dec: Declination of the Sun
-%       cosz: Cosine of the solar zenith angle
-%       i0: 
-%       m: 
+%       1 - dj: Julian day (ordinal day)
+%       2 - e0: Sun-Earth distance correction factor
+%       3 - ang_day: Day angle
+%       4 - et: Equation of time
+%       5 - tst_hours: 
+%       6 - w: Hour angle [radians]
+%       7 - dec: Declination of the Sun
+%       8 - cosz: Cosine of the solar zenith angle
+%       9 - i0: 
+%       10 - m: 
 %   tst_num: 
 %   UTC_num: 
 %

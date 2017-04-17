@@ -10,12 +10,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\3_VALIDATION
-%       One Excel file with all years validation i.e. 'ASP00-BOM-01.xlsx'
+%       One Excel file with all years validation i.e. 'loc00-owner_station-num'_VAL
 %
 % OUTPUT:
 % ..\OUTPUT\4_CASES
 %       Two Excel files:
-%       ASP00-BOM-01-CANDIDATES.xlsx Sheets:
+%       'loc00-owner_station-num'-CANDIDATES.xlsx Sheets:
 %       - CDFTotal_num: Long Term CDF (number of days) per each month
 %           [---- Month ----- Val_BIN_1 Val_BIN_2 ... Val_BIN_end]
 %       - CDFTotal_pct: Long Term CDF (cumulated percentage) per each month
@@ -40,7 +40,7 @@
 %           [Year Month ----- Val_BIN_1 Val_BIN_2 ... Val_BIN_end]
 %       - outputLMR: Summary LMR methodology results 
 %           [Month Year_selected DNI_selected Long_Term_Average #_of_Missing_Records]
-%       INPUT-GENERATION.xlsx Sheets:
+%       'loc00-owner_station-num'-INPUT-GENERATION.xlsx Sheets:
 %       - VARIABLE: Name of the main variable (GHI or DNI)
 %       - INPUT: Number of the years selected for each month
 %           [MONTH TMY_(Year_selected) LMR_(Year_selected)]
@@ -56,10 +56,10 @@ if ~exist(path_cases,'dir')
 end
 
 namef = [loc '00-' owner_station '-' num];
-file_xls = strcat(path_val,'\',namef,'.xlsx'); % Name input file after validation
+file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Name input file after validation
 
 file_Out = strcat(path_cases,'\',namef,'-CANDIDATES.xlsx'); % Candidates
-file_Input = strcat(path_cases,'\','INPUT-GENERATION.xlsx'); % Input Generation
+file_InputGen = strcat(path_cases,'\',namef,'-INPUT-GENERATION.xlsx'); % Input Generation
 
 % Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
@@ -123,13 +123,13 @@ for m = 1:12
         end
     end
     
-    %     CDFT_num(m,1) = 0;
+    % CDFT_num(m,1) = 0;
     CDFT_num(m,2) = m;
-    %     CDFT_num(m,3) = 0;
+    % CDFT_num(m,3) = 0;
     
-    %     CDFT_cumpct(m,1) = 0;
+    % CDFT_cumpct(m,1) = 0;
     CDFT_cumpct(m,2) = m;
-    %     CDFT_cumpct(m,3) = 0;
+    % CDFT_cumpct(m,3) = 0;
     
     [CDFT_num(m,4:end), CDFT_cumpct(m,4:end)] = CDF_general(data_day(pos_m,4),maximum,nbins); % Function
 end
@@ -276,7 +276,7 @@ xlswrite(file_Out,[headers; num2cell(CDF_selTMY_num)],'CDF_selTMY_num','A1');
 % Write the selected TMY CDFs
 xlswrite(file_Out,[headers; num2cell(floor(CDF_selTMY_cumpct*100)/100)],'CDF_selTMY_pct','A1');
 % Write TMY results
-TMY_ex = [{'', 'Year', 'DNI TMY', 'LTA'}; [headers_m, num2cell(outputTMY)]];
+TMY_ex = [{'', 'Year', 'DNI TMY', 'RMV'}; [headers_m, num2cell(outputTMY)]];
 xlswrite(file_Out,TMY_ex,'outputTMY','A1');
 
 %% LMR METHODOLOGY Output
@@ -290,20 +290,20 @@ xlswrite(file_Out,[headers; num2cell(CDF_selLMR_num)],'CDF_selLMR_num','A1');
 % Write the selected LMR CDFs
 xlswrite(file_Out,[headers; num2cell(floor(CDF_selLMR_cumpct*100)/100)],'CDF_selLMR_pct','A1');
 % Write LMR results
-LMR_ex = [{'', 'Year', 'DNI LMR', 'LTA', '#MR'}; [headers_m, num2cell(outputLMR)]];
+LMR_ex = [{'', 'Year', 'DNI LMR', 'RMV', '#MR'}; [headers_m, num2cell(outputLMR)]];
 xlswrite(file_Out,LMR_ex,'outputLMR','A1');
 
 %% INPUT GENERATION
 % Write the inputs for series generation
-xlswrite(file_Input,{'DNI'},'VARIABLE','A1'); % Main variable
+xlswrite(file_InputGen,{'DNI'},'VARIABLE','A1'); % Main variable
 
 % Input
 input_ex = [{'MONTH', 'TMY', 'LMR'}; [headers_m, num2cell([outputTMY(:,1), outputLMR(:,1)])]];
-xlswrite(file_Input,input_ex,'INPUT','A1'); % Write candidates selected
+xlswrite(file_InputGen,input_ex,'INPUT','A1'); % Write candidates selected
 
 % Objective
 obj_ex = [{'MONTH', 'TMY', 'LMR'}; [headers_m, num2cell([outputTMY(:,2), outputLMR(:,2)])]];
-xlswrite(file_Input,obj_ex,'OBJECTIVE','A1'); % Write objective DNI value
+xlswrite(file_InputGen,obj_ex,'OBJECTIVE','A1'); % Write objective DNI value
 
 %% Figures
 % Long Term CDF -----------------------------------------------------------
@@ -332,6 +332,7 @@ end
 colormap(jet)
 title('Long Term CDF'), xlabel('Months'), ylabel('Bins'), zlabel('CDF')
 view([-127 30]), xticklabels(headers_m)
+print('-djpeg','-opengl','-r350',strcat(path_cases,'\','LongTermCDF'))
 
 % figure; h3 = axes; bar3(1:12,CDFT_cumpct(:,4:3+nbins)); % Color bar by bin
 % title('Long Term CDF'), xlabel('Bins'), ylabel('Months'), zlabel('CDF')
@@ -356,6 +357,7 @@ end
 colormap(jet)
 title('CDF TMY selected'), xlabel('Months'), ylabel('Bins'), zlabel('CDF')
 view([-127 30]), xticklabels(headers_m)
+print('-djpeg','-opengl','-r350',strcat(path_cases,'\','CDFTMYselected'))
 
 % CDF LMR selected --------------------------------------------------------
 figCDFLMR = CDF_selLMR_cumpct(:,4:3+nbins)';
@@ -376,4 +378,5 @@ end
 colormap(jet)
 title('CDF LMR selected'), xlabel('Months'), ylabel('Bins'), zlabel('CDF')
 view([-127 30]), xticklabels(headers_m)
+print('-djpeg','-opengl','-r350',strcat(path_cases,'\','CDLMRselected'))
 

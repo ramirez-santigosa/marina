@@ -1,4 +1,4 @@
-function [ dataqc ] = QC(path_fig,data,vars,max_rad,cols,tzone,name,Isc,offset_empirical)
+function [dataqc] = QC(path_fig,data,vars,max_rad,cols,tzone,name,Isc,offset_empirical)
 %QC Creates an ordered, continuous, and complete annual array
 %from the input data (which must be in standard format). Calculates
 %astronomical variables, quality control and creates figures with the QC

@@ -1,4 +1,4 @@
-function dataval = validation(dataqc,level,max_nonvalid,max_dist)
+function [dataval] = validation(dataqc,level,max_nonvalid,max_dist)
 %VALIDATION Qualifies the data of one year after QC process. A daily and
 %monthly validation process are executed.
 %   INPUT:
@@ -77,7 +77,7 @@ end
 % Pre-allocation of validated daily data. Results of the daily validation
 % process only include 365 days, February 29th of leap years is skipped.
 % [dj GHI flag_daily_validation_GHI dj DNI flag_daily_validation_DNI] => 6 columns per year
-colD = 6; res_daily = NaN(365,colD); % Always 365!???
+colD = 6; res_daily = NaN(365,colD); % Always 365!
 interpG_y = zeros(365,4); interpB_y = zeros(365,4);
 i_interG = 1; i_interB = 1; % Interpolation indices
 
@@ -153,7 +153,7 @@ dataval.interp = {interpG_y; interpB_y};
 % on the basis of the daily validation results. A month is valid if has as
 % much as 4 non-valid days.
 [daily,monthly,replaced,nonvalid_m] = valida_months(res_daily,max_nonvalid,max_dist);
-replaced = [ones(size(replaced,1),1)*year replaced];
+replaced = [ones(size(replaced,1),1)*year replaced]; % Add year to replaced array
 
 dataval.daily = daily; % Update daily values if replacements were made
 dataval.monthly = monthly; % Saves monthly validation results
@@ -163,18 +163,21 @@ dataval.nonvalid_m = nonvalid_m; % Number of non-valid days in each month
 %% Update radiation series
 % Updating data in case of days replacements in valida_months
 for i = 1:size(replaced,1)
-    origin_day = replaced(i,3)+num_previous_days(replaced(i,2));
-    replaced_day = replaced(i,4)+num_previous_days(replaced(i,2)); 
+    origin_day = replaced(i,3)+num_previous_days(replaced(i,2)); % To Julian day
+    replaced_day = replaced(i,4)+num_previous_days(replaced(i,2)); % To Julian day
     lin_ini_orig = (origin_day-1)*24*num_obs+1;
     lin_end_orig = origin_day*24*num_obs;
     lin_ini_repl = (replaced_day-1)*24*num_obs+1;
     lin_end_repl = replaced_day*24*num_obs;
-    % Should be updated astro matrix as well? TODO
+    
     dataval.mqc(lin_ini_repl:lin_end_repl,1:6) = dataval.mqc(lin_ini_orig:lin_end_orig,1:6); % Date
-    dataval.mqc(lin_ini_repl:lin_end_repl,7) = dataval.mqc(lin_ini_orig:lin_end_orig,7); % GHI
-    dataval.mqc(lin_ini_repl:lin_end_repl,8) = dataval.mqc(lin_ini_orig:lin_end_orig,8); % Flag QC GHI
-    dataval.mqc(lin_ini_repl:lin_end_repl,9) = dataval.mqc(lin_ini_orig:lin_end_orig,9); % DNI
-    dataval.mqc(lin_ini_repl:lin_end_repl,10)= dataval.mqc(lin_ini_orig:lin_end_orig,10); % Flag QC DNI
+    dataval.mqc(lin_ini_repl:lin_end_repl,7:8) = dataval.mqc(lin_ini_orig:lin_end_orig,7:8); % GHI & Flag QC GHI
+    dataval.mqc(lin_ini_repl:lin_end_repl,9:10) = dataval.mqc(lin_ini_orig:lin_end_orig,9:10); % DNI & Flag QC DNI
+    % For interpolation purpose on the series generation module, since DHI
+    % wasn't include in the validation process
+    dataval.mqc(lin_ini_repl:lin_end_repl,11:12) = dataval.mqc(lin_ini_orig:lin_end_orig,11:12); % DHI & Flag QC DHI
+    
+    dataval.astro(lin_ini_repl:lin_end_repl,:) = dataval.astro(lin_ini_orig:lin_end_orig,:); % Update astro
 end
 
 end

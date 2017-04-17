@@ -10,20 +10,20 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\1_FORMAT
-%       One Matlab file per year: data i.e. 'ASP00-BOM-01-YYYY'
+%       One Matlab file per year i.e. 'loc00-owner_station-num-YYYY'
 %       Each file contains the structured variable 'data'
 %
 % OUTPUT:
 % ..\OUTPUT\2_QC
-%       One Matlab file per year: dataqc i.e. 'ASP00-BOM-01-YYYY_QC'
+%       One Matlab file per year i.e. 'loc00-owner_station-num-YYYY_QC'
 %       Each file contains the structured variable 'dataqc'
 %       Same as "data" but adding two fields
-%       (records are sorted and a the year is full)
+%       (records are sorted and the year is complete)
 %  (1)  dataqc.mqc  = [date_vec(:,1:6)(TST) GHIord fGHI DNIord fDNI DHIord fDHI]
 %  (2)  datosqc.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
 %
-%       figures tests per variables
-%       figures GHI measured vs. calculated
+%       Figures Tests per variables
+%       Figures GHI measured vs. calculated
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close, clearvars, %clc

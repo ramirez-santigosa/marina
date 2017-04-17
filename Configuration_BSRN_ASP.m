@@ -57,6 +57,24 @@ if num_cand > num_years
 end
 nbins = 10; % Number of bins for cumulative distribution function
 
+%% Series Generation
+% Information for SAM CSV format
+sam_format = true; % Define if this file should be printed
+city = 'Alice Springs'; reg = 'NT'; country = 'Australia'; % City, Region, Country
+
+% Information for IEC 62862-1-3 format
+iec_format = true; % Define if this file should be printed
+hl = 25; eol = '\n'; del = 'tab'; % # of headerslines, End of line, Delimeter
+nowstr = datestr(datetime('now'),'yyyy-mm-ddTHH:MM:SS'); % Now string
+histmsg = ' First test ASR data set file'; % History message
+cmt = 'TMY methodology'; % General comment
+ds = 'synthetic'; % Data source
+udf = 'yes'; % User defined fields
+t_res = 'fixed'; % Time resolution type
+t_ave = 'no'; % Time averaging
+t_com = 'yes'; % Time completeness
+t_leap = 'no'; % Time calender leap years
+
 %% Paths definition
 path_in = '..\BSRNData'; % Input data in annual folders inside: .\aaaa\
 path_meteo = '..\METEOData'; % Meteo data in annual excel files
@@ -65,4 +83,4 @@ path_qc = '..\OUTPUT\2_QC'; % Output Quality Control
 path_val = '..\OUTPUT\3_VALIDATION'; % Output validation and gap filling
 path_cases = '..\OUTPUT\4_CASES'; % Output selection methodology
 path_tmy = '..\OUTPUT\5_TMY'; % Output annual series
-path_trans = '..\OUTPUT\6_TRANS'; %
+% path_trans = '..\OUTPUT\6_TRANS'; %

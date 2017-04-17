@@ -28,5 +28,5 @@ MARINA40_CANDIDATES
 %% Module 5: Annual series generation
 MARINA50_SERIES_GENERATION
 
-%% Module 6: Other??
-% run('MARINA6_PLOTTING_DAYS');
+%% Module 6: Adding other meteorological data
+% MARINA60_ADDING_METEO_DATA

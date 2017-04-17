@@ -10,28 +10,29 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\2_QC
-%       One Matlab file per year: dataqc i.e. 'ASP00-BOM-01-YYYY_QC'
+%       One Matlab file per year: dataqc i.e. 'loc00-owner_station-num-YYYY_QC'
 %       Each file contains the structured variable 'dataqc'
 %
 % OUTPUT:
 % ..\OUTPUT\3_VALIDATION
-%       One Matlab file per year: dataval i.e. 'ASP00-BOM-01-YYYY_VAL'
+%       One Matlab file per year: dataval i.e. 'loc00-owner_station-num-YYYY_VAL'
 %       Each file contains the structured variable 'dataval'
-%       Same as "dataqc" but adding five fields and updating 'mqc' if some
-%       data is interpolated in the daily validation or if some days are
-%       replaced in the monthly validation. February 29th of leap years is
-%       trimmed in 'mqc' and 'astro' matrices. Added fields:
+%       Same as "dataqc" but adding five fields and updating 'mqc' and
+%       'astro' if some data is interpolated in the daily validation or if 
+%       some days are replaced in the monthly validation. February 29th of 
+%       leap years is trimmed in 'mqc' and 'astro' matrices. Added fields:
 %  (1)  dataval.interp: Saves the number of interpolated data in each day
 %       for GHI and DNI. It is a cell with two matrices.
 %  (2)  dataval.daily = Daily radiation values (Wh/m2) and the daily
-%       validation process flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
+%       validation flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
 %  (3)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
-%       validation process flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
+%       validation flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
 %  (4)  dataval.replaced = Array with the replaced days along the years
 %  (5)  dataval.nonvalid_m = Array with the number of non-valid days in 
 %       each month
 %
-%       One Excel file with all years validation results:
+%       One Excel file with all years validation results
+%       'loc00-owner_station-num'_VAL
 %  (1)  Sheet Interpol: Summary of the interpolated data in each day
 %  (2)  Sheet Val_Day: Results of the daily validation of all years
 %  (3)  Sheet Val_Month: Results of the monthly validation of all years
@@ -60,13 +61,13 @@ replaced_ex = zeros(num_years*12*max_nonvalid,4); idxR = 1;
 Table_missing = zeros(12,num_years);
 Table_GHI = zeros(12,num_years);
 Table_DNI = zeros(12,num_years);
+namef = [loc '00-' owner_station '-' num];
 
 for y = year_ini:year_end
     
     year_str = num2str(y);
     fprintf('Validation of %s year %s\n',name,year_str);
     
-    namef = [loc '00-' owner_station '-' num];
     name_out = [namef '-' year_str];
     name_out_QC  = [name_out '_QC'];
     name_out_VAL = [name_out '_VAL'];
@@ -139,7 +140,7 @@ if isempty(replaced_ex)
     replaced_ex = '####';
 end
 
-file_xls = strcat(path_val,'\',namef,'.xlsx');
+file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx');
 
 % Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
