@@ -38,6 +38,11 @@ namef = [loc '00-' owner_station '-' num]; % MATLAB files with the results of th
 filename_val = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Validation Excel report
 filename_input = strcat(path_cases,'\',namef,'-INPUT-GENERATION.xlsx'); % Input Generation
 num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
+if iec_format % Create a functional date vector in ISO 8601 format if IEC 62862-1-2 file will be printed
+    time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
+        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-2)
+    time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
+end
 
 %% Reading data of the input series generation file
 [~,variable] = xlsread(filename_input,'VARIABLE','A1'); % Read main variable
@@ -231,8 +236,8 @@ for i=1:n_series
         year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
         sam_out(3,:) = year_d;
 
-        headers{1,1} = 'Source,Location ID,City,Region,Country,Latitude,Longitude,Time Zone,Elevation';
-        headers{2,1} = [owner_station,',',loc,',',city,',',reg,',',country,',',...
+        headerSAM{1,1} = 'Source,Location ID,City,Region,Country,Latitude,Longitude,Time Zone,Elevation';
+        headerSAM{2,1} = [owner_station,',',loc,',',city,',',reg,',',country,',',...
             num2str(dataval.geodata.lat,'%.6f'),',',...
             num2str(dataval.geodata.lon,'%.6f'),',',...
             num2str(tzone,'%2.1f'),',',...
@@ -245,8 +250,8 @@ for i=1:n_series
         fprintf('Generating SAM CSV format file for %s series\n',name_series);
 
         fileID = fopen(filename_out,'W');
-        for j = 1:size(headers,1)
-            fprintf(fileID,'%s\n',headers{j});
+        for j = 1:size(headerSAM,1)
+            fprintf(fileID,'%s\n',headerSAM{j});
         end
         for j = 1:size(labels,2)
             fprintf(fileID,'%s,',labels{j});
@@ -260,11 +265,8 @@ for i=1:n_series
     
     % IEC 62862-1-3 format ------------------------------------------------
     if iec_format
-        filename_out = strcar(path_series,'\','ASR_',namef,'_',name_series,'.txt');        
-        time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
-        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-2)
-        time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
-        time_str = cellstr(datestr(SERIES_out_int(:,1:6,n_series),'yyyy-mm-ddTHH:MM:SS')); % Original date
+        filename_out = strcat(path_series,'\','ASR_',namef,'_',name_series,'.txt');
+        time_str = cellstr(datestr(SERIES_out_int(:,1:6,i),'yyyy-mm-ddTHH:MM:SS')); % Original date
         
         headers{1,1} = ['#MET_IEC.v1.0 headerlines: ', num2str(hl,'%d')];
         headers{2,1} = ['#characterset ', slCharacterEncoding()];
@@ -291,7 +293,7 @@ for i=1:n_series
         headers{23,1} = '#QC.type.4 BSRN';
         headers{24,1} = '#QC.type.4 https://doi.org/10.1016/j.renene.2015.01.031';
         headers{25,1} = '#begindata';
-        labels{1} = 'time'; labels{2} = 'time_orig'; labels{3} = 'dni'; labels{4} = 'dniqcflag';
+        labelIEC{1} = 'time'; labelIEC{2} = 'time_orig'; labelIEC{3} = 'dni'; labelIEC{4} = 'dniqcflag';
         
         fprintf('Generating IEC 62862-1-3 format file for %s series\n',name_series);
         
@@ -299,8 +301,8 @@ for i=1:n_series
         for j = 1:size(headers,1)
             fprintf(fileID,'%s\n',headers{j});
         end
-        for j = 1:size(labels,2)
-            fprintf(fileID,'%s\t',labels{j});
+        for j = 1:size(labelIEC,2)
+            fprintf(fileID,'%s\t',labelIEC{j});
         end
         fprintf(fileID,'\n');
         for j = 1:size(SERIES_out,1)

@@ -13,6 +13,10 @@ function [ dataDaysQC ] = plotdays_qc( iniDay, finalDay, variables )
 %   Figures 2 - 4: Each radiation variable with its quality control flag
 
 run('Configuration_BSRN_ASP.m');
+path_fig = '..\OUTPUT\figures';
+if ~exist(path_fig,'dir')
+    mkdir(path_fig);
+end
 
 % Get the data ------------------------------------------------------------
 y1 = iniDay(1);
@@ -68,7 +72,7 @@ legend(leg,'Interpreter','none'), xlabel('Time'), ylabel('Irradiance [W/m2]')
 [mm,~] = string_chars_num(finalDay(2),2);
 [dd,~] = string_chars_num(finalDay(3),2);
 date = strcat(num2str(finalDay(1)),mm,dd); module = 'qc';
-print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\figures\Radiation','_',date,'_',module))
+print('-djpeg','-opengl','-r350',strcat(path_fig,'\Radiation','_',date,'_',module))
 
 for i = 0:length(colsVars)-1
     figure;
@@ -81,7 +85,7 @@ for i = 0:length(colsVars)-1
     ylabel('Quality Control Flag')
     set(gca,'YLim',[0 max(qcf)],'YTick',0:max(qcf))
     legend(legfQC(i+1,:),'Interpreter','none')
-    print('-djpeg','-opengl','-r350',strcat('..\OUTPUT\figures\',legfQC{i+1,2},'_',date,'_',module))
+    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',legfQC{i+1,2},'_',date,'_',module))
 end
 
 end

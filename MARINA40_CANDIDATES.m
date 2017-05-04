@@ -172,7 +172,8 @@ headers{1} = 'Year';
 xlswrite(file_Out,[headers; num2cell(CDF_num)],'CDFyears_num','A1'); % Write CDF number of days per year
 xlswrite(file_Out,[headers; num2cell(floor(CDF_cumpct*100)/100)],'CDFyears_pct','A1'); % Write CDF per year
 
-disp('Candidates selected!');
+disp('Candidates Selection:');
+disp('The candidate months for the typical year has been selected!');
 
 %% Generation of main output tables (Values & Candidates)
 spreadsheet_pct = reshape(CDF_cumpct(:,4:3+nbins)',nbins,12,[]); % Reshape per Bins X Months X Years

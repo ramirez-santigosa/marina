@@ -89,7 +89,7 @@ for m = 1:12
     else % File DOES NOT exists
         % Saving a summary when file does not exist
         sum_col(row_summary,:) = -1*ones(1,num_var);
-        warning(['File ', file_id, ' does not exists.'])
+        warning(['The file ', file_id, ' does not exist.'])
     end
     
     row_summary = row_summary+1; % Summary row
