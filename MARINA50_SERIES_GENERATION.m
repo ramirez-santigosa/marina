@@ -62,7 +62,8 @@ end
 % Read the years of the selected months to be concatenated and the name of the series
 [series_in,text_series_in,~] = xlsread(filename_input,'INPUT');
 % Read objective data for series generation
-month_obj_value = xlsread(filename_input,'OBJECTIVE');
+RMV = xlsread(filename_input,'OBJECTIVE'); % Representative long term monthly value (Objective value). One column per series.
+ARV = sum(RMV); % Annual Representative Value (so many columns as series)
 n_series = size(series_in,2); % Number of columns/series to generate
 
 %% Reading data of the validation process results
@@ -132,41 +133,39 @@ for i=1:n_series
                 year,m)
         end
         
-        % Monthly Objective Value (MOV) from Input Generation Excel file
-        MOV = month_obj_value(m,i);
-        % MOV is equal to the sum of the series values after validation
-        series_MOV = round(sum(series_m(i_data,col_main))/(num_obs*1000)); % kWh/m2
-        if series_MOV~=MOV
-            warning('The sum up of the series radiation data of the year %d and month %d\n do not correspond with the monthly objective value of the candidate month.',...
+        % Monthly value from the monthly validation Excel report
+        MV = month_val(1,cols_main(2));
+        % Monthly value is equal to the sum of the series values after validation
+        series_MV = round(sum(series_m(i_data,col_main))/(num_obs*1000)); % kWh/m2
+        if series_MV~=MV
+            warning('The sum up of the series radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
         end
         
-        % MOV is equal to the sum of the series daily values
-        daily_MOV = round(sum(days_m_val(:,cols_main(2)))/1000); % kWh/m2
-        if daily_MOV~=MOV
-            warning('The sum up of the daily radiation data of the year %d and month %d\n do not correspond with the monthly objective value of the candidate month.',...
-                year,m)
-        end
-        
-        % MOV is equal to the monthly value of the validation report
-        month_MOV = month_val(1,cols_main(2)); % Monthly value
-        if month_MOV~=MOV
-            warning('The radition monthly value of the year %d and month %d\n do not correspond with the monthly objective value of the candidate month.',...
+        % Monthly value is equal to the sum of the series daily values
+        daily_MV = round(sum(days_m_val(:,cols_main(2)))/1000); % kWh/m2
+        if daily_MV~=MV
+            warning('The sum up of the daily radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
         end
         % If no warnings: All values are coherent
         
-        % Equation (6) Standard TODO --------------------------------------
-%         ARV = sum(all days ASR); % How is this obtained??? It is fixed, or recalculated after substitutions
-%         if abs(RMV(m)-month_val) <= (ARV/12)*0.02
-%             if month_val<=RMV(m) % month_val must increment
-%                 [resultado,usados,cambiados,contador,control]...
-%                     = Cambia_dias_sube(mes,A,VMO,max_cambios,dist_dias,max_uso); % Function
-%             elseif month_val>RMV(m) % month_val must decrement
-%                 [resultado,usados,cambiados,contador,control]...
-%                     = Cambia_dias_baja(mes,A,VMO,max_cambios,dist_dias,max_uso); % Function
-%             end
-%         end
+        % Check difference between monthly irradiance value and RMV -------
+        % Equation (6) Standard IEC 62862-1-2
+        limit = (ARV(i)/12)*0.02; % Limit of the difference between monthly value and RMV
+        if abs(RMV(m,i)-MV) >= limit
+            days_m = [days_m_val(:,1) days_m_val(:,cols_main(2))/1000]; % # of day and daily irradiance in kWh/m2
+            if MV <= RMV(m) % Monthly value must increment
+                [resultado,usados,cambiados,contador,control]...
+                    = subs_days_up(m,days_m,RMV(m),limit,max_dist,max_times,max_subs); % Function
+            elseif MV > RMV(m) % Monthly value must decrement
+                [resultado,usados,cambiados,contador,control]...
+                    = subs_days_dw(m,days_m,RMV(m),limit,max_dist,max_times,max_subs); % Function
+            end
+        end
+        
+        % Apply the last substitutions ---
+        
         
         % Output Series ---------------------------------------------------
         SERIES_out(row_m_obs_ini:row_m_obs_end,:,i) = series_m;

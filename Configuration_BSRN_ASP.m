@@ -48,7 +48,7 @@ max_rad = 1600; % Max. solar radiation value for the figures
 %% Validation
 level = 4; % Level for validation. Defines since which flag value a day is valid according to the QC flags
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
-max_dist = 5; % Maximum distance in the days used for the sustitution
+max_dist = 5; % Maximum distance in the days used for the substitution
 
 %% Candidates
 num_cand = 5; % Number of candidates. Must be <= than the number of years
@@ -58,6 +58,10 @@ end
 nbins = 10; % Number of bins for cumulative distribution function
 
 %% Series Generation
+% max_dist = 5; % Maximum distance in the days used for the substitution
+max_times = 4; % Maximum number of times that the same day can be repeated
+max_subs = 30; % Maximum number of substitutions allowed each month
+
 % Information for SAM CSV format
 sam_format = true; % Define if this file should be printed
 city = 'Alice Springs'; reg = 'NT'; country = 'Australia'; % City, Region, Country

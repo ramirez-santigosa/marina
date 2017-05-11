@@ -7,7 +7,7 @@ function [dataval] = validation(dataqc,level,max_nonvalid,max_dist)
 %   QC flags. See help QC function.
 %   max_nonvalid: Maximum number of allowed non valid days in a month in
 %   order to be considered a valid month.
-%   max_dist: Maximum distance in the days used for the sustitution
+%   max_dist: Maximum distance in the days used for the substitution
 %   (+-max_dist).
 %
 %   OUTPUT:
@@ -176,8 +176,8 @@ for i = 1:size(replaced,1)
     % For interpolation purpose on the series generation module, since DHI
     % wasn't include in the validation process
     dataval.mqc(lin_ini_repl:lin_end_repl,11:12) = dataval.mqc(lin_ini_orig:lin_end_orig,11:12); % DHI & Flag QC DHI
-    
-    dataval.astro(lin_ini_repl:lin_end_repl,:) = dataval.astro(lin_ini_orig:lin_end_orig,:); % Update astro
+    % Astronomical data are not required to be substituted
+%     dataval.astro(lin_ini_repl:lin_end_repl,:) = dataval.astro(lin_ini_orig:lin_end_orig,:); % Update astro
 end
 
 end

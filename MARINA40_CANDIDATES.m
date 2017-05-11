@@ -98,7 +98,7 @@ GHI_mf = Val_Month(:,colGHImf); % GHI monthly validation flag
 %% Evaluating CDF for each month (along all years)
 maximum = max(data_day(:,4)); % Maximum daily DNI along all years
 % Pre-allocating
-month_ave = zeros(12,1); % Average montly DNI along all years
+month_ave = zeros(12,1); % Average montly DNI along all years (whole data set long term monthly mean)
 CDFT_num = zeros(12,3+nbins); % Array to save the cumulative number of days of each bin along all years
 CDFT_cumpct = zeros(12,3+nbins); % Array to save the cumulative percent of each bin along all years
 
@@ -270,20 +270,20 @@ xlswrite(file_Out,cand_ex,'CANDIDATES','A1'); % Write the candidates years per m
 %% TMY METHODOLOGY Output
 outputTMY(:,1) = Year_selectedTMY; % 1st COLUMN, YEAR SELECTED
 outputTMY(:,2) = Val_selectedTMY; % 2nd COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
-outputTMY(:,3) = floor(month_ave*100)/100; % 3rd COLUMN, MONTHLY MEAN OF THE VALID MONTHS (along all years)
+outputTMY(:,3) = floor(month_ave*100)/100; % 3rd COLUMN, LONG TERM MONTHLY MEAN OF THE VALID MONTHS (along all years)
 
 % Write the selected TMY CDFs number of days
 xlswrite(file_Out,[headers; num2cell(CDF_selTMY_num)],'CDF_selTMY_num','A1');
 % Write the selected TMY CDFs
 xlswrite(file_Out,[headers; num2cell(floor(CDF_selTMY_cumpct*100)/100)],'CDF_selTMY_pct','A1');
 % Write TMY results
-TMY_ex = [{'', 'Year', 'DNI TMY', 'RMV'}; [headers_m, num2cell(outputTMY)]];
+TMY_ex = [{'', 'Year', 'DNI TMY', 'LTMM'}; [headers_m, num2cell(outputTMY)]];
 xlswrite(file_Out,TMY_ex,'outputTMY','A1');
 
 %% LMR METHODOLOGY Output
 outputLMR(:,1) = Year_selectedLMR; % 1st COLUMN, YEAR SELECTED
 outputLMR(:,2) = Val_selectedLMR; % 2nd COLUMN, MONTHLY VALUE OF THE SELECTED MONTH
-outputLMR(:,3) = floor(month_ave*100)/100; % 3rd COLUMN, MONTHLY MEAN OF THE VALID MONTHS (along all years)
+outputLMR(:,3) = floor(month_ave*100)/100; % 3rd COLUMN, LONG TERM MONTHLY MEAN OF THE VALID MONTHS (along all years)
 outputLMR(:,4) = nNV_selectedLMR; % 4th COLUMN, NUMBER OF MISSING RECORDS OF THE SELECTED MONTH
 
 % Write the selected LMR CDFs number of days
@@ -291,7 +291,7 @@ xlswrite(file_Out,[headers; num2cell(CDF_selLMR_num)],'CDF_selLMR_num','A1');
 % Write the selected LMR CDFs
 xlswrite(file_Out,[headers; num2cell(floor(CDF_selLMR_cumpct*100)/100)],'CDF_selLMR_pct','A1');
 % Write LMR results
-LMR_ex = [{'', 'Year', 'DNI LMR', 'RMV', '#MR'}; [headers_m, num2cell(outputLMR)]];
+LMR_ex = [{'', 'Year', 'DNI LMR', 'LTMM', '#MR'}; [headers_m, num2cell(outputLMR)]];
 xlswrite(file_Out,LMR_ex,'outputLMR','A1');
 
 %% INPUT GENERATION
