@@ -16,16 +16,16 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %   astro: 10 columns vector [dj e0 ang_day et tst_hours w dec cosz i0 m]
 %       1 - dj: Julian day (ordinal day)
 %       2 - e0: Sun-Earth distance correction factor
-%       3 - ang_day: Day angle
+%       3 - ang_day: Day angle [radians]
 %       4 - et: Equation of time
-%       5 - tst_hours: 
+%       5 - tst_hours: True solar time
 %       6 - w: Hour angle [radians]
-%       7 - dec: Declination of the Sun
+%       7 - dec: Declination of the Sun [radians]
 %       8 - cosz: Cosine of the solar zenith angle
-%       9 - i0: 
-%       10 - m: 
-%   tst_num: 
-%   UTC_num: 
+%       9 - g0: Calculated global irradiance on a horizontal surface [W/m2]
+%       10 - m: Relative optical air mass
+%   tst_num: True solat time
+%   UTC_num: Coordinated Universal Time
 %
 % - F. Mendoza (February 2017) Update
 
@@ -52,7 +52,7 @@ date_vec_center = datevec(date_num_center);
 % Dayly (TST assumed) !!!
 dj = floor(date_num)-datenum(date_vec_center(:,1),1,1)+1; % Number of the day of each observation
 e0 = 1+0.033*cos(2*pi*dj/365); % Sun-Earth distance correction factor
-ang_day = double(2*pi*(dj-1)/365); % Day angle
+ang_day = double(2*pi*(dj-1)/365); % Day angle [Radians]
 et = 229.18*(0.000075+0.001868*cos(ang_day)-0.032077*sin(ang_day)...
     -0.014615*cos(2*ang_day)-0.04089*sin(2*ang_day)); % Equation of time
 
@@ -78,20 +78,20 @@ tst_hours = (tst_num-floor(tst_num))*24; % Hours (decimals)
 w = (12-tst_hours)*15*pi/180; % Hour angle [radians]
 dec = 0.006918-0.399912*cos(ang_day)+0.070257*sin(ang_day)...
       -0.006758*cos(2*ang_day)+0.000907*sin(2*ang_day)...
-      -0.002697*cos(3*ang_day)+0.00148*sin(3*ang_day); % Declination of the Sun
+      -0.002697*cos(3*ang_day)+0.00148*sin(3*ang_day); % Declination of the Sun [radians]
 cosz = sin(dec).*sin(lat_rad)+cos(dec).*cos(lat_rad).*cos(w); % Cosine of the solar zenith angle
 
-i0 = Isc.*e0.*cosz; % 
-pos_neg = find(i0<=0);
-pos_pos = find(i0>0);
-i0(pos_neg) = 0; % If negative, turn into zero
+g0 = Isc.*e0.*cosz; % Calculated global irradiance on a horizontal surface (W/m2)
+pos_neg = find(g0<=0);
+pos_pos = find(g0>0);
+g0(pos_neg) = 0; % If negative, turn into zero
 
-m = zeros(size(dj));
+m = zeros(size(dj)); % Relative optical air mass
 m(pos_neg) = max(m(pos_pos));
-m(pos_pos) = 1./(cosz(pos_pos)+0.50572.*(96.07995-(acos(cosz(pos_pos)).*180/pi)).^-1.6364); %
+m(pos_pos) = 1./(cosz(pos_pos)+0.50572.*(96.07995-(acos(cosz(pos_pos)).*180/pi)).^-1.6364); % Relative optical air mass Kasten and Young 1989
 
 %% Output
 
 % Dates converted back to UTC at the beginning of the interval
-UTC_num = tst_num-sumGMT2TST-(offset_empirical/24)-(0.5/(num_obs*24)); %
-astro   = double([dj e0 ang_day et tst_hours w dec cosz i0 m]);
+UTC_num = tst_num-sumGMT2TST-(offset_empirical/24)-(0.5/(num_obs*24)); % Coordinated universal time
+astro = double([dj e0 ang_day et tst_hours w dec cosz g0 m]); % Output
