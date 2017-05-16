@@ -100,7 +100,7 @@ for dj = 1:365
     dec = dataval.astro(lin_ini,7); % Declination of the first instant of the day
     wsr = acos(-tan(dec)*tan(lat_rad)); % Scalar sunrise
     wss = -wsr; % Scalar sunset
-%     i0 = dataval.astro(lin_ini:lin_end,9); % 
+%     G0 = dataval.astro(lin_ini:lin_end,9); % Extraterrestrial solar radiation [W/m2]
 
     % During daytime hourly angles are less than sunrise angle (which is
     % positive) and greater than sunset angle (negative)

@@ -18,7 +18,7 @@ function [dataqc] = QC(path_fig,data,vars,max_rad,cols,tzone,name,Isc,offset_emp
 %   OUTPUT:
 %   dataqc: Standard data structure with two additional matrices: .mqc and .astro
 %       dataqc.mqc  = [YYYY MM DD HH mm ss GHIord fGHI DNIord fDNI DHIord fDHI]
-%       dataqc.astro = [dj e0 ang_day et tst_hours w dec cosz i0 m]
+%       dataqc.astro = [dj e0 ang_day et tst_hours w dec cosz G0 m]
 %   f*** are arrays with the QC flags of the variable *** according with
 %   BSRN procedurement:
 %   0 Fail to pass 1st test: Physically Possible Limits
@@ -70,7 +70,7 @@ else
     timeZ = strcat('UTC-',num2str(tzone));
 end
 
-%% Input time reference to station local time (now data stars in the previous year!?)
+%% Input time reference to station local time (now data stars in the previous year!)
 date_vec = input(:,cols.date);
 
 if numel(date_vec(1,:))==4 % If just year, month, day, hour => complete time vector
@@ -135,19 +135,19 @@ DHIord(pos_obs_INI) = DHI; % In the station time zone
 
 dj = astro(:,1); % Julian day
 e0 = astro(:,2); % Sun-Earth distance correction factor
-% ang_day = astro(:,3);
-% et = astro(:,4);
-% tst_hours = astro(:,5);
-w = astro(:,6); % Hour angle
-dec = astro(:,7); % Declination of the Sun
-cosz = astro(:,8); % Cosine of the solar zenith angle.
-% i0 = astro(:,9);
-% m = astro(:,10);
+% ang_day = astro(:,3); % Day angle [radians]
+% et = astro(:,4); % Equation of time
+% tst_hours = astro(:,5); % True solar time
+w = astro(:,6); % Hour angle [radians]
+dec = astro(:,7); % Declination of the Sun [radians]
+cosz = astro(:,8); % Cosine of the solar zenith angle
+% G0 = astro(:,9); % Extraterrestrial solar radiation [W/m2]
+% m = astro(:,10); % Relative optical air mass
 
 % There must be a problem with UTC conversion in astro function!!!
 
 %% Quality Control (BSRN)
-% TEST #1: Physically Possible Limits ------------------------------------
+% TEST #1: Physically Possible Limits -------------------------------------
 % Two groups of data are defined:
 % - low: Solar elevation angle below 0 degrees. Applicable for Tests #1 y 2
 % - others

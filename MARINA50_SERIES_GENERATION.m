@@ -357,7 +357,7 @@ for i=1:n_series
             month_str = num2str(month);
             day_str = num2str(day);
             
-            i0 = dataval.astro(first:last,9); % ???
+            G0 = dataval.astro(first:last,9); % Extraterrestrial solar radiation (W/m2)
             hour = day_piece(:,4);
             min = day_piece(:,5);
             hourdec = hour+min/60;
@@ -368,7 +368,7 @@ for i=1:n_series
             date_str = ['Month ' month_str ' - Day ' day_str ' - Year ' year_str];
             
             figure;
-            plot(hourdec,i0,'-k'); hold on
+            plot(hourdec,G0,'-k'); hold on
             plot(hourdec,GHI,'b-o');
             plot(hourdec,DNI,'r-o');
             plot(hourdec,DHI,'c-o');
@@ -377,7 +377,7 @@ for i=1:n_series
             title([name_series,' - ',date_str],'Fontsize',16);
             xlabel('Local Universal Time','Fontsize',16);
             ylabel('W/m^2','Fontsize',16);
-            leg = legend('GHo','GHI','DNI','DHI');
+            leg = legend('G0','GHI','DNI','DHI');
             set(leg,'Fontsize',16);
             filename = strcat(name_series,'-',date_str);
             print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))

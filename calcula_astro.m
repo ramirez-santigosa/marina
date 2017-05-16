@@ -22,7 +22,7 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %       6 - w: Hour angle [radians]
 %       7 - dec: Declination of the Sun [radians]
 %       8 - cosz: Cosine of the solar zenith angle
-%       9 - g0: Calculated global irradiance on a horizontal surface [W/m2]
+%       9 - G0: Extraterrestrial solar radiation [W/m2]
 %       10 - m: Relative optical air mass
 %   tst_num: True solat time
 %   UTC_num: Coordinated Universal Time
@@ -81,10 +81,10 @@ dec = 0.006918-0.399912*cos(ang_day)+0.070257*sin(ang_day)...
       -0.002697*cos(3*ang_day)+0.00148*sin(3*ang_day); % Declination of the Sun [radians]
 cosz = sin(dec).*sin(lat_rad)+cos(dec).*cos(lat_rad).*cos(w); % Cosine of the solar zenith angle
 
-g0 = Isc.*e0.*cosz; % Calculated global irradiance on a horizontal surface (W/m2)
-pos_neg = find(g0<=0);
-pos_pos = find(g0>0);
-g0(pos_neg) = 0; % If negative, turn into zero
+G0 = Isc.*e0.*cosz; % Extraterrestrial solar radiation (W/m2)
+pos_neg = find(G0<=0);
+pos_pos = find(G0>0);
+G0(pos_neg) = 0; % If negative, turn into zero
 
 m = zeros(size(dj)); % Relative optical air mass
 m(pos_neg) = max(m(pos_pos));
@@ -94,4 +94,4 @@ m(pos_pos) = 1./(cosz(pos_pos)+0.50572.*(96.07995-(acos(cosz(pos_pos)).*180/pi))
 
 % Dates converted back to UTC at the beginning of the interval
 UTC_num = tst_num-sumGMT2TST-(offset_empirical/24)-(0.5/(num_obs*24)); % Coordinated universal time
-astro = double([dj e0 ang_day et tst_hours w dec cosz g0 m]); % Output
+astro = double([dj e0 ang_day et tst_hours w dec cosz G0 m]); % Output
