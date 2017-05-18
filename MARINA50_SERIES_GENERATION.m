@@ -265,7 +265,7 @@ for i=1:n_series
         options_sam.lon = dataval.geodata.lon;
         options_sam.alt = dataval.geodata.alt;
         fprintf('Generating SAM CSV format file for %s series\n',name_series);
-        sam_write(filename_out,sam_out,num_obs,options_sam);
+        sam_write(filename_out,sam_out,num_obs,options_sam); % Function
     end
     
     % IEC 62862-1-3 format ------------------------------------------------
@@ -276,7 +276,7 @@ for i=1:n_series
         options_iec.lon = dataval.geodata.lon;
         options_iec.alt = dataval.geodata.alt;
         fprintf('Generating IEC 62862-1-3 format file for %s series\n',name_series);
-        iec_write(filename_out,iec_out,time_func_str,num_obs,options_iec);
+        iec_write(filename_out,iec_out,time_func_str,num_obs,options_iec); % Function
     end
     
     %% Plot figures
