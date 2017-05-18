@@ -38,9 +38,9 @@ namef = [loc '00-' owner_station '-' num]; % MATLAB files with the results of th
 filename_val = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Validation Excel report
 filename_input = strcat(path_cases,'\',namef,'-INPUT-GENERATION.xlsx'); % Input Generation
 num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
-if iec_format % Create a functional date vector in ISO 8601 format if IEC 62862-1-2 file will be printed
+if iec_format % Create a functional date vector in ISO 8601 format if it is typical year file
     time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
-        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-2)
+        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-3)
     time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
 end
 
@@ -94,7 +94,8 @@ for i=1:n_series
         mkdir(path_fig);
     end
     
-    fprintf('Generating the %s serie for simulation.\n',name_series);
+    fprintf('Generating the %s series for simulation.\n',name_series);
+    MV = zeros(12,1); % To save monthly value
     
     for m = 1:12 % Extraction of the series, daiily and monthly values
         year = series_in(m,i); % Get the number of the year to read the corresponding data
@@ -134,17 +135,17 @@ for i=1:n_series
         end
         
         % Monthly value from the monthly validation Excel report
-        MV = month_val(1,cols_main(2));
+        MV(m) = month_val(1,cols_main(2));
         % Monthly value is equal to the sum of the series values after validation
         series_MV = round(sum(series_m(i_data,col_main))/(num_obs*1000)); % kWh/m2
-        if series_MV~=MV
+        if series_MV~=MV(m)
             warning('The sum up of the series radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
         end
         
         % Monthly value is equal to the sum of the series daily values
         daily_MV = round(sum(days_m_val(:,cols_main(2)))/1000); % kWh/m2
-        if daily_MV~=MV
+        if daily_MV~=MV(m)
             warning('The sum up of the daily radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
         end
@@ -153,19 +154,45 @@ for i=1:n_series
         % Check difference between monthly irradiance value and RMV -------
         % Equation (6) Standard IEC 62862-1-2
         limit = (ARV(i)/12)*0.02; % Limit of the difference between monthly value and RMV
-        if abs(RMV(m,i)-MV) >= limit
+        if abs(RMV(m,i)-MV(m)) >= limit
             days_m = [days_m_val(:,1) days_m_val(:,cols_main(2))/1000]; % # of day and daily irradiance in kWh/m2
-            if MV <= RMV(m) % Monthly value must increment
-                [resultado,usados,cambiados,contador,control]...
-                    = subs_days_up(m,days_m,RMV(m),limit,max_dist,max_times,max_subs); % Function
-            elseif MV > RMV(m) % Monthly value must decrement
-                [resultado,usados,cambiados,contador,control]...
-                    = subs_days_dw(m,days_m,RMV(m),limit,max_dist,max_times,max_subs); % Function
+            if MV(m) <= RMV(m,i) % Monthly value must increment
+                [resultSubs,substituted,used,counter,ctrl]...
+                    = subs_days_up(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
+            elseif MV(m) > RMV(m,i) % Monthly value must decrement
+                [resultSubs,substituted,used,counter,ctrl]...
+                    = subs_days_dw(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
             end
+        else % No substitutions are carried out
+            resultSubs = NaN; substituted = NaN; used = NaN;
+            counter = NaN; ctrl = NaN;
         end
+        finalSubs.result{i,m} = resultSubs;
+        finalSubs.substituted{i,m} = substituted;
+        finalSubs.used{i,m} = used;
+        finalSubs.counter{i,m} = counter;
+        finalSubs.ctrl{i,m} = ctrl;
         
-        % Apply the last substitutions ---
-        
+        % Apply the last substitutions ------------------------------------
+        if ~isnan(resultSubs)
+            subs_days = (1:num_days_m(m))'.*substituted; % Index of the substituted days
+            subs_days(subs_days==0) = []; % Trim zeros
+            final_days = resultSubs(:,end-1); % Final days after substitutions
+            origin_days = final_days(substituted); % Origin day for each substitution
+            for k = 1:size(subs_days,1)
+                if days_m_val(subs_days(k),1)~=days_m_val(origin_days(k),4) % Substitution did not make yet
+                    lin_ini_orig = (origin_days(k)-1)*24*num_obs+1;
+                    lin_end_orig = origin_days(k)*24*num_obs;
+                    lin_ini_subs = (subs_days(k)-1)*24*num_obs+1;
+                    lin_end_subs = subs_days(k)*24*num_obs;
+                    
+                    series_m(lin_ini_subs:lin_end_subs,1:12) = series_m(lin_ini_orig:lin_end_orig,1:12); % Update series of the month
+                    days_m_val(subs_days(k),:) = days_m_val(origin_days(k),:); % Update daily series of the month
+                end
+            end
+            month_val(1,[2,5]) = round([sum(days_m_val(:,2)) sum(days_m_val(:,5))]/1000); % Update month irradiance values
+            month_val(1,[3,6]) = 2; % Update monthly validation flags !!! 2?
+        end
         
         % Output Series ---------------------------------------------------
         SERIES_out(row_m_obs_ini:row_m_obs_end,:,i) = series_m;
@@ -186,131 +213,70 @@ for i=1:n_series
     fprintf('# of GHI data interpolated and DHI calculated: %d\n',num_cases(6));
     fprintf('# of GHI, DNI data interpolated and DHI calculated: %d\n',num_cases(7));
         
-    %% Write down EXCEL series report TODO
+    %% Write down EXCEL series report
     filename_out = strcat(path_series,'\',namef,'-OUTPUT-GENERATION.xlsx'); % Output Generation
     fprintf('Generating EXCEL report for %s series\n',name_series);
     
     % Switch off new excel sheet warning
     warning off MATLAB:xlswrite:AddSheet
 
-    % Write the definitive daily series of the typical year
+    % Write the definitive daily series of the typical year ---------------
     headerD{1} = 'Year'; headerD{2} = 'Month';
     headerD{3} = 'day GHI'; headerD{4} = 'GHI (Wh/m2)'; headerD{5} = 'fdvGHI';
     headerD{6} = 'day DNI'; headerD{7} = 'DNI (Wh/m2)'; headerD{8} = 'fdvDNI';
+    headerD{9} = 'Substituted';
     
     % Year and month for daily results
     year_y = zeros(365,1); year_m = zeros(365,1); k = 1; % No leap years
+    substituted_ex = false(365,1);
     for month = 1:12
+        row_m_d_ini = num_previous_days(month)+1;
+        row_m_d_end = row_m_d_ini+num_days_m(month)-1;
+        if ~isnan(finalSubs.substituted{i,month}) % If susbstitutions were carried out in this module
+            substituted_ex(row_m_d_ini:row_m_d_end) = finalSubs.substituted{i,month};
+        end
         for d = 1:num_days_m(month)
             year_y(k) = series_in(month,i);
             year_m(k) = month;
             k = k+1;
         end
     end
+    
+    day_ex = num2cell([year_y year_m DAYS_out(:,:,i) substituted_ex]);
+    xlswrite(filename_out,[headerD; day_ex],strcat(name_series,'_D'),'A1');
         
-    xlswrite(filename_out,[headerD; num2cell([year_y year_m DAYS_out(:,:,i)])],...
-        strcat(name_series,'_D'),'A1');
-        
-    % Write the definitive monthly series of the typical year
+    % Write the definitive monthly series of the typical year -------------
     headerM{1} = 'Year';
     headerM{2} = 'month'; headerM{3} = 'GHI (kWh/m2)'; headerM{4} = 'fmvGHI';
     headerM{5} = 'month'; headerM{6} = 'DNI (kWh/m2)'; headerM{7} = 'fmvDNI';
+    headerM{8} = [variable{1} ' RMV']; headerM{9} = ['Initial ' variable{1}];
+    headerM{10} = 'Substitutions';
     
-    xlswrite(filename_out,[headerM; num2cell([series_in(:,i) MONTHS_out(:,:,i)])],strcat(name_series,'_M'),'A1');
-    
+    subs_ex = cell2mat(finalSubs.counter(i,:))'; % For Excel report
+    month_ex = num2cell([series_in(:,i) MONTHS_out(:,:,i) RMV(:,i) MV subs_ex]);
+    xlswrite(filename_out,[headerM; month_ex],strcat(name_series,'_M'),'A1');
+
     %% Write down txt files
     % SAM CSV format ------------------------------------------------------
     if sam_format
         filename_out = strcat(path_series,'\','SAM_',namef,'_',name_series,'.csv');
-        sam_out = SERIES_out_int(:,[1:5,7,9,11],i)'; % Without the flags
-        % Continuous day in the month along the year (override day substitutions for final csv file)
-        m31 = zeros(1,31*24*num_obs); k = 1;
-        for d = 1:31
-            for o = 1:24*num_obs
-                m31(1,k) = d;
-                k = k+1;
-            end
-        end
-        m30 = m31(1,1:30*24*num_obs); m28 = m31(1,1:28*24*num_obs);
-        year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
-        sam_out(3,:) = year_d;
-
-        headerSAM{1,1} = 'Source,Location ID,City,Region,Country,Latitude,Longitude,Time Zone,Elevation';
-        headerSAM{2,1} = [owner_station,',',loc,',',city,',',reg,',',country,',',...
-            num2str(dataval.geodata.lat,'%.6f'),',',...
-            num2str(dataval.geodata.lon,'%.6f'),',',...
-            num2str(tzone,'%2.1f'),',',...
-            num2str(dataval.geodata.alt,'%d')];
-        labels{1} = 'Year'; labels{2} = 'Month'; labels{3} = 'Day'; labels{4} = 'Hour';
-        labels{5} = 'Minute'; labels{6} = 'GHI'; labels{7} = 'DNI'; labels{8} = 'DHI';
-        labels{9} = 'Tdry'; labels{10} = 'Tdew'; labels{11} = 'Twet'; labels{12} = 'RH';
-        labels{13} = 'Pres'; labels{14} = 'Wspd';
-
+        sam_out = SERIES_out_int(:,[1:5,7,9,11],i); % [Year Month Day Hour Minute GHI DNI DHI]. Without the flags
+        options_sam.lat = dataval.geodata.lat; % Add geodata from data validation structure
+        options_sam.lon = dataval.geodata.lon;
+        options_sam.alt = dataval.geodata.alt;
         fprintf('Generating SAM CSV format file for %s series\n',name_series);
-
-        fileID = fopen(filename_out,'W');
-        for j = 1:size(headerSAM,1)
-            fprintf(fileID,'%s\n',headerSAM{j});
-        end
-        for j = 1:size(labels,2)
-            fprintf(fileID,'%s,',labels{j});
-        end
-        fprintf(fileID,'\n');
-        fprintf(fileID,...
-            '%d,%d,%d,%d,%d,%.0f,%.0f,%.0f\n',...
-            sam_out);
-        fclose(fileID);
+        sam_write(filename_out,sam_out,num_obs,options_sam);
     end
     
     % IEC 62862-1-3 format ------------------------------------------------
     if iec_format
         filename_out = strcat(path_series,'\','ASR_',namef,'_',name_series,'.txt');
-        time_str = cellstr(datestr(SERIES_out_int(:,1:6,i),'yyyy-mm-ddTHH:MM:SS')); % Original date
-        
-        headers{1,1} = ['#MET_IEC.v1.0 headerlines: ', num2str(hl,'%d')];
-        headers{2,1} = ['#characterset ', slCharacterEncoding()];
-        headers{3,1} = ['#delimiter ', del];
-        headers{4,1} = ['#endofline ', eol];
-        headers{5,1} = ['#title ', namef];
-        headers{6,1} = ['#history.',nowstr,histmsg];
-        headers{7,1} = ['#comment ', cmt];
-        headers{8,1} = ['#datasource ', ds];
-        headers{9,1} = ['#user_defined_fields ', udf];
-        headers{10,1} = ['#IPR.institution.name ', owner_station];
-        headers{11,1} = '#IPR.copyrightText ExampleCR';
-        headers{12,1} = '#IPR.contact someone@example.com';
-        headers{13,1} = ['#location.latitudeDegrN ', num2str(dataval.geodata.lat,'%.4f')];
-        headers{14,1} = ['#location.longitudeDegrE ', num2str(dataval.geodata.lon,'%.4f')];
-        headers{15,1} = ['#location.elevationMAMSL ', num2str(dataval.geodata.alt,'%d')];
-        headers{16,1} = ['#time.timezone ', dataval.timedata.timezone];
-        headers{17,1} = ['#time.resolutiontype ', t_res];
-        headers{18,1} = ['#time.resolutionSec ', num2str(3600/num_obs,'%d')];
-        headers{19,1} = ['#time.averaging ', t_ave];
-        headers{20,1} = ['#time.completeness ', t_com];
-        headers{21,1} = ['#time.calender.leap_years ', t_leap];
-        headers{22,1} = ['#gap.notanumber ' num2str(dataval.nodata)];
-        headers{23,1} = '#QC.type.4 BSRN';
-        headers{24,1} = '#QC.type.4 https://doi.org/10.1016/j.renene.2015.01.031';
-        headers{25,1} = '#begindata';
-        labelIEC{1} = 'time'; labelIEC{2} = 'time_orig'; labelIEC{3} = 'dni'; labelIEC{4} = 'dniqcflag';
-        
+        iec_out = SERIES_out_int(:,[1:6 9:10],i); % [Year Month Day Hour Minute Second DNI fDNI]
+        options_iec.lat = dataval.geodata.lat; % Add geodata from data validation structure
+        options_iec.lon = dataval.geodata.lon;
+        options_iec.alt = dataval.geodata.alt;
         fprintf('Generating IEC 62862-1-3 format file for %s series\n',name_series);
-        
-        fileID = fopen(filename_out,'W');
-        for j = 1:size(headers,1)
-            fprintf(fileID,'%s\n',headers{j});
-        end
-        for j = 1:size(labelIEC,2)
-            fprintf(fileID,'%s\t',labelIEC{j});
-        end
-        fprintf(fileID,'\n');
-        for j = 1:size(SERIES_out,1)
-            fprintf(fileID,...
-                '%s\t %s\t %4.0f\t %3d\n',...
-                time_func_str{j}, time_str{j}, SERIES_out_int(j,9:10));
-        end
-        fprintf(fileID,'#enddata');
-        fclose(fileID);
+        iec_write(filename_out,iec_out,time_func_str,num_obs,options_iec);
     end
     
     %% Plot figures
@@ -344,49 +310,48 @@ for i=1:n_series
     close all
     
     % Daily figures - Are you sure you want to do this? -------------------
-    numD = 0;
-    for month = 1:12
-        for day = 1:num_days_m(month)
-            numD = numD+1;
-            first = (numD-1)*24*num_obs+1;
-            last = numD*24*num_obs;
-            
-            day_piece = SERIES_out_int(first:last,:,i);
-            
-            year_str = num2str(day_piece(1,1));
-            month_str = num2str(month);
-            day_str = num2str(day);
-            
-            G0 = dataval.astro(first:last,9); % Extraterrestrial solar radiation (W/m2)
-            hour = day_piece(:,4);
-            min = day_piece(:,5);
-            hourdec = hour+min/60;
-            GHI = day_piece(:,7);
-            DNI = day_piece(:,9);
-            DHI = day_piece(:,11);
-            
-            date_str = ['Month ' month_str ' - Day ' day_str ' - Year ' year_str];
-            
-            figure;
-            plot(hourdec,G0,'-k'); hold on
-            plot(hourdec,GHI,'b-o');
-            plot(hourdec,DNI,'r-o');
-            plot(hourdec,DHI,'c-o');
-            axis([0 24 0 1600]);
-            grid on
-            title([name_series,' - ',date_str],'Fontsize',16);
-            xlabel('Local Universal Time','Fontsize',16);
-            ylabel('W/m^2','Fontsize',16);
-            leg = legend('G0','GHI','DNI','DHI');
-            set(leg,'Fontsize',16);
-            filename = strcat(name_series,'-',date_str);
-            print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
-            close all
-        end
-    end
+%     numD = 0;
+%     for month = 1:12
+%         for day = 1:num_days_m(month)
+%             numD = numD+1;
+%             first = (numD-1)*24*num_obs+1;
+%             last = numD*24*num_obs;
+%             
+%             day_piece = SERIES_out_int(first:last,:,i);
+%             
+%             year_str = num2str(day_piece(1,1));
+%             month_str = num2str(month);
+%             day_str = num2str(day);
+%             
+%             G0 = dataval.astro(first:last,9); % Extraterrestrial solar radiation (W/m2)
+%             hour = day_piece(:,4);
+%             min = day_piece(:,5);
+%             hourdec = hour+min/60;
+%             GHI = day_piece(:,7);
+%             DNI = day_piece(:,9);
+%             DHI = day_piece(:,11);
+%             
+%             date_str = ['Month ' month_str ' - Day ' day_str ' - Year ' year_str];
+%             
+%             figure;
+%             plot(hourdec,G0,'-k'); hold on
+%             plot(hourdec,GHI,'b-o');
+%             plot(hourdec,DNI,'r-o');
+%             plot(hourdec,DHI,'c-o');
+%             axis([0 24 0 1600]);
+%             grid on
+%             title([name_series,' - ',date_str],'Fontsize',16);
+%             xlabel('Local Universal Time','Fontsize',16);
+%             ylabel('W/m^2','Fontsize',16);
+%             leg = legend('G0','GHI','DNI','DHI');
+%             set(leg,'Fontsize',16);
+%             filename = strcat(name_series,'-',date_str);
+%             print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+%             close all
+%         end
+%     end
     
 end
 
 save(strcat(path_tmy,'\','output_series'),'SERIES_out_int','DAYS_out',...
-    'MONTHS_out'); % Save results
-
+    'MONTHS_out','finalSubs'); % Save results

@@ -128,7 +128,7 @@ for y = year_ini:year_end
     
 end
 
-hInterpB = {'Year','Month','Origin day','# data interpolated'}; % Headers replaced days
+hInterpB = {'Year','Month','Day','# data interpolated'}; % Headers interpolated days
 hReplaced = {'Year','Month','Origin day','Replaced day'}; % Headers replaced days
 
 %% Writing Validation Report in Excel

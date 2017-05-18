@@ -24,7 +24,7 @@ function [astro,tst_num,UTC_num] = calcula_astro...
 %       8 - cosz: Cosine of the solar zenith angle
 %       9 - G0: Extraterrestrial solar radiation [W/m2]
 %       10 - m: Relative optical air mass
-%   tst_num: True solat time
+%   tst_num: True solar time
 %   UTC_num: Coordinated Universal Time
 %
 % - F. Mendoza (February 2017) Update
@@ -49,7 +49,7 @@ end
 date_vec_center = datevec(date_num_center);
 
 %% Astronomical calculations
-% Dayly (TST assumed) !!!
+% Daily (TST assumed) !!!
 dj = floor(date_num)-datenum(date_vec_center(:,1),1,1)+1; % Number of the day of each observation
 e0 = 1+0.033*cos(2*pi*dj/365); % Sun-Earth distance correction factor
 ang_day = double(2*pi*(dj-1)/365); % Day angle [Radians]

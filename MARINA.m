@@ -14,7 +14,7 @@
 Configuration_BSRN_ASP
 
 %% Module 1: To Format
-MARINA10_TOFORMAT
+MARINA10_TOFORMAT_BSRN_ASP
 
 %% Module 2: Quality Control
 MARINA20_QC

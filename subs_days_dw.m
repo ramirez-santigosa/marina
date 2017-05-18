@@ -1,11 +1,14 @@
-function [result,usados,cambiados,contador,control]...
+function [results,substituted,used,counter,ctrl]...
     = subs_days_dw(month,days_m,RMV,limit,max_dist,max_times,max_subs)
 %SUBS_DAYS_DW Carry out days substitutions to decrement the monthly value
-%towards the Representative monthly value (RMV).
+%towards the Representative monthly value (RMV). Iteratively substitutes
+%the day with the maximum irradiance value for a day with minor
+%irradiance value until ctrl<limit.
 %   INPUT:
 %   month: Number of the evaluated month.
 %   days_m: Number of the day and daily irradiance in kWh/m2.
 %   RMV: Representative long term monthly value (objective value).
+%   limit: Maximum difference between RMV and monthly value.
 %   max_dist: Maximum distance in the days used for the substitution
 %   (+-max_dist).
 %   max_times: Maximum number of times that the same day may appear in the
@@ -13,113 +16,119 @@ function [result,usados,cambiados,contador,control]...
 %   max_subs: Maximum number of substitutions allowed each month.
 %
 %   OUTPUT:
-%   result: aaa
+%   results: Array with many rows as the number of days in the month, as 
+%   many columns as the number of made substitutions times 2. The last pair
+%   of columns saves the final days and its irradiance values after all the
+%   substitutions.
+%   substituted: One-dimension logical array [n_days 1]
+%       1: if the day has been substituted
+%       0: otherwise
+%   used: Two-dimension logical array [n_days # of substitutions]
+%       1: if that day has been used as origin day
+%       0: otherwise
+%   counter: Counter of the number of substitutions carried out.
+%   ctrl: Difference between the monthly value and the RMV. Control
+%   variable
 %
 % - F. Mendoza (May 2017) Update
 
-num_dias_mes=[31 28 31 30 31 30 31 31 30 31 30 31];
-%Inicializamos los vectores:
-% cambiados: es un vector lógico de 1 dimensión [1 a num_dias(mes)]:
-%               toma valor 1: si el día ya ha sido cambiado
-%               toma valor 0: si el día NO ha sido cambiado
-Dias_input=days_m(:,1);
-Dias_ord=1:num_dias_mes(month);
-cambiados=Dias_input~=Dias_ord';
+num_days_m = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
+n_days = num_days_m(month); % Number of days in this specific month
+days_input = days_m(:,1); % Number of the days from the input (substitutions may already have happened)
+days_ord = 1:n_days; % Sorted array with the number of the days
 
-% usados: es un vector lógico de 2 dimensiones:
-%       filas: [1 a num_dias(mes)]:
-%       columnas: una columna por cambio realizado:
-%               toma valor 1: la fila del día usado
-%               toma valor 0: si el día NO ha sido usado
-pos_cambiados=find(cambiados); % posiciones de los cambiados
-valores_usados=Dias_input(pos_cambiados);
-usados(1:num_dias_mes(month),1)=0;
+%% Initialize arrays
+% substituted: One-dimension logical array [n_days 1]:
+%       1: if the day has been substituted
+%       0: if the day hasn't been substituted
+substituted = days_input~=days_ord';
+counter = sum(substituted); % Counter of the number of substitutions
 
-for i=1:numel(valores_usados)
-    usados(valores_usados(i),i)=1;
+% used: Two-dimension logical array:
+%       rows: n_days
+%       columns: one column per made substitution
+%           1: if that day has been used as origin day
+%           0: if that day hasn't been used as origin day
+used_days = days_input(substituted);
+used = false(n_days,numel(used_days));
+for i = 1:numel(used_days)
+    used(used_days(i),i) = true;
 end
 
-% realiza los cambios en los valores diarios necesarios para
-% acercarse al valor objetivo por la iquierda
-SUMA=sum(days_m(:,2));
+%% Carry out days substitutions to get closer to the objective value from the right
 
-control=SUMA-RMV; % Diferencia entre el valor mensual de la campaña de medidas y el Valor mensual representativo
-% Para este caso siempre es positivo
-contador=0;
+SUM_irrad = sum(days_m(:,2)); % Sum daily irradiance values => Monthly Value
+ctrl = SUM_irrad-RMV; % Difference between the monthly value and the RMV. In this case always >0
 
-result(:,1)=days_m(:,1); % posiciones iniciales
-result(:,2)=days_m(:,2); % valores iniciales
+% Initialization results array
+results = days_m; % Initial positions and irradiance values
 
-if control > limit  % Condicion de estar por fuera del limte establecido
-    while (control > limit && contador<=max_subs)
+i = 0; % Number of iterations
+if ctrl>limit  % Evaluate condition out of the limit
+    while (ctrl>limit && counter<=max_subs)
+        i = i+1; % Update iterations number and columns
+        ini_col_pos = i*2-1;
+        ini_col_val = i*2;
         
-        contador=contador+1;
         
-        col_pos_ini=(contador*2)-1;
-        col_val_ini=contador*2;
         
-        [maximo,posicionmax]=max((result(:,col_val_ini).*~cambiados));  % Valor maximo de radiación y su posicion
-        pos_prim=posicionmax(1)-max_dist;
-        pos_ultm=posicionmax(1)+max_dist;
-        if pos_prim<=0     %asumimos que el vector de entrada solo tiene el num de dias del mes
-            pos_prim=1;
+        % Discard previously substituted days
+        [maxI,i_max] = max(results(:,ini_col_val).*(~substituted)); % Max irradiance value and its index
+        
+        first_range = i_max-max_dist; % Limits of the range
+        last_range = i_max+max_dist;
+        if first_range<=0 % Verify that the limits are inside the month
+            first_range = 1;
         end
-        if pos_ultm>=num_dias_mes(month)
-            pos_ultm=num_dias_mes(month);
+        if last_range>n_days
+            last_range = n_days;
         end
-        posiciones=(pos_prim:1:pos_ultm); %vector con el trocito de las posiciones posibles
-        posiciones_logicas(1:num_dias_mes(month),1)=0; %inicilizamos vector lógico de todo el mes a ceros
-        posiciones_logicas(posiciones,1)=1; %vector lógico con 1 en las posibles de cambio posibles
         
-        poco_usados=(sum(usados,2)<max_times); %Suma de los valores logicos de la fila que no pueden ser mas de 4
+        range = false(n_days,1); % Init range (logic array)
+        range(first_range:last_range) = true; % Range of valid days for the substitution
         
-        %sentencia del millón!!
-        % Vector lógico que tiene en cuenta:
-        % a: que estén entre los +-n días permitidos
-        % b: que no haya sido cambiado anterioremente el día
-        % c: que no se haya usado ya el máximo de veces
-        posibles=posiciones_logicas.*~cambiados.*poco_usados;
+        % Sum through columns of the logic values, must be minor than max_times
+        not_fully_used = (sum(used,2)<max_times);
         
-        if sum(posibles)==0
-            fprintf('Not possible possitions mes:%d. Contador: %d \n',month, contador);
+        % Million dollar sentence !!!
+        % Logical array that takes into account:
+        % a: Must be in the range +-max_dist days
+        % b: Don't be a previously substituted day
+        % c: Used as origin day less that max_times
+        candidates = range.*(~substituted).*not_fully_used;
+        
+        if sum(candidates)==0
+            fprintf('There are not possible candidates for the substitution. Counter: %d\n',counter);
             break
         end
         
-        valores_posibles=result(:,col_val_ini);   % A(posiciones,2);
-        incremento=(valores_posibles-result(posicionmax,col_val_ini));
-        falta= (abs(incremento+control)).*posibles;   % el control es negativo, si posibles=0 ese valor no se tiene en ciuenta
-        % y entonces aqui solo quedan los dias cercanos
-        optimo=min(falta(falta~=0));     % se elige el valor por el cual reemplazar el minimo que se aproxima mas a cero
-        TEMP=find(falta==optimo);
-        pos_optimo=TEMP(1);    % Encuentra la posicion del valor a reemplazar en el vector falta
+        % Distance to the control variable with the substitution (ctrl<0)
+        dist = abs(results(:,ini_col_val)-maxI+ctrl).*candidates; dist(dist==0) = 999;
+        [~, optimal_i] = min(dist); % Optimal day is the one with the closest value to the control variable from the right
         
-        col_pos_fin=contador*2+1;
-        col_val_fin=contador*2+2;
+        % Next columns
+        next_col_pos = i*2+1;
+        next_col_val = (i+1)*2;
+        % Initialization next columns of the results array
+        results(:,next_col_pos) = results(:,ini_col_pos); % Positions
+        results(:,next_col_val) = results(:,ini_col_val); % Daily irradiance value
         
-        % inicilización de las dos columnas de salida,
-        % con los valores de entrada
-        result(:,col_pos_fin)=result(:,col_pos_ini); % posiciones iniciales
-        result(:,col_val_fin)=result(:,col_val_ini); % valores iniciales
+        % Substitution
+        results(i_max,next_col_pos) = results(optimal_i,ini_col_pos); % Position
+        results(i_max,next_col_val) = results(optimal_i,ini_col_val); % Daily irradiance value
         
-        %sustituimos el dato de la posición cambiada, en la colimna de las
-        %posiciones de salida
-        result(posicionmax,col_pos_fin)=...
-            result(pos_optimo,col_pos_ini); % posición sustituida
-        %sustituimos el dato del valor cambiado, en la colimna de las
-        %posiciones de salida
-        result(posicionmax,col_val_fin)=...
-            result(pos_optimo,col_val_ini); % valor sustituido
+        SUM_irrad = sum(results(:,next_col_val)); % Monthly irradiance value after the last substitution
+        ctrl = SUM_irrad-RMV; % Update control variable
+        substituted(i_max,1) = true; % Updated substitutions array
+        counter = counter+1; % Update substitutions counter
+        used(:,counter) = false; % Update array with the origin days used
+        used(optimal_i,counter) = true;
         
-        SUMA=sum(result(:,col_val_fin));
-        control=(SUMA-RMV);
-        
-        cambiados(posicionmax,1)=1;
-        
-        usados(:,contador)=0;
-        usados(pos_optimo,contador)=1;
+        if counter>max_subs
+            fprintf('Maximum number of substitutions reached (%d). Control variable: %.2f\n',max_subs,ctrl);
+        end
         
     end
-    
 end
 
 end

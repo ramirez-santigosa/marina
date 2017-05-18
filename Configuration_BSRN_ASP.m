@@ -60,24 +60,60 @@ nbins = 10; % Number of bins for cumulative distribution function
 %% Series Generation
 % max_dist = 5; % Maximum distance in the days used for the substitution
 max_times = 4; % Maximum number of times that the same day can be repeated
-max_subs = 30; % Maximum number of substitutions allowed each month
+max_subs = 8; % Maximum number of substitutions allowed each month
 
 % Information for SAM CSV format
 sam_format = true; % Define if this file should be printed
-city = 'Alice Springs'; reg = 'NT'; country = 'Australia'; % City, Region, Country
+if sam_format
+    options_sam.source = owner_station;
+    options_sam.locID = loc;
+    options_sam.city = 'Alice Springs'; options_sam.reg = 'NT';
+    options_sam.country = 'Australia'; % City, Region, Country
+%     options_sam.lat = lat; % geodata is read from data file (lat, lon, alt)
+%     options_sam.lon = lon;
+    options_sam.tzone = tzone;
+%     options_sam.alt = alt;
+
+    labels{1} = 'Year'; labels{2} = 'Month'; labels{3} = 'Day'; labels{4} = 'Hour';
+    labels{5} = 'Minute'; labels{6} = 'GHI'; labels{7} = 'DNI'; labels{8} = 'DHI';
+    labels{9} = 'Tdry'; labels{10} = 'Tdew'; labels{11} = 'Twet'; labels{12} = 'RH';
+    labels{13} = 'Pres'; labels{14} = 'Wspd';
+    options_sam.labels = labels;
+end
 
 % Information for IEC 62862-1-3 format
 iec_format = true; % Define if this file should be printed
-hl = 25; eol = '\n'; del = 'tab'; % # of headerslines, End of line, Delimeter
-nowstr = datestr(datetime('now'),'yyyy-mm-ddTHH:MM:SS'); % Now string
-histmsg = ' First test ASR data set file'; % History message
-cmt = 'TMY methodology'; % General comment
-ds = 'synthetic'; % Data source
-udf = 'yes'; % User defined fields
-t_res = 'fixed'; % Time resolution type
-t_ave = 'no'; % Time averaging
-t_com = 'yes'; % Time completeness
-t_leap = 'no'; % Time calender leap years
+if iec_format
+    options_iec.hl = 25; % # of headers lines
+    options_iec.characterset = slCharacterEncoding(); % Character set
+    options_iec.del = 'tab'; % Delimeter
+    options_iec.eol = '\n'; % End of line
+    options_iec.title = [loc '00-' owner_station '-' num];
+    options_iec.nowstr = datestr(datetime('now'),'yyyy-mm-ddTHH:MM:SS'); % Now string
+    options_iec.histmsg = ' First test ASR data set file'; % History message
+    options_iec.cmt = 'Your comment here'; % General comment
+    options_iec.ds = 'synthetic'; % Data source
+    options_iec.udf = 'yes'; % User defined fields
+    options_iec.inst_name = owner_station; % Institution name provider
+%     options_iec.lat = lat; % geodata is read from data file (lat, lon, alt)
+%     options_iec.lon = lon;
+%     options_iec.alt = alt;
+    if tzone >= 0 % String with the time zone of the station
+        timeZ = strcat('UTC+',num2str(tzone));
+    else
+        timeZ = strcat('UTC-',num2str(tzone));
+    end
+    options_iec.timezone = timeZ; % Time zone
+    options_iec.t_res = 'fixed'; % Time resolution type
+    options_iec.t_ave = 'no'; % Time averaging
+    options_iec.t_com = 'yes'; % Time completeness
+    options_iec.t_leap = 'no'; % Time calender leap years
+    options_iec.nodata = no_data; % No data value
+    
+    labelsIEC{1} = 'time'; labelsIEC{2} = 'time_orig';
+    labelsIEC{3} = 'dni'; labelsIEC{4} = 'dniqcflag';
+    options_iec.labels = labelsIEC;
+end
 
 %% Paths definition
 path_in = '..\BSRNData'; % Input data in annual folders inside: .\aaaa\
@@ -87,4 +123,3 @@ path_qc = '..\OUTPUT\2_QC'; % Output Quality Control
 path_val = '..\OUTPUT\3_VALIDATION'; % Output validation and gap filling
 path_cases = '..\OUTPUT\4_CASES'; % Output selection methodology
 path_tmy = '..\OUTPUT\5_TMY'; % Output annual series
-% path_trans = '..\OUTPUT\6_TRANS'; %
