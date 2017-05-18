@@ -7,6 +7,8 @@ MARINA (Multi annual radiation information approach) is a package of MATLAB® M-f
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
+![Diagram](https://bitbucket.org/Malorasa/marina/src/develop/other/marina-Files.png?raw=true "Diagram of the MARINA package")
+
 ### Modules: ###
 
 * To format: the input data are converted into an internal pre-defined structured format. The first part of this module has to be specifically developed for each input format (i.e. BSRN, PSA…).
@@ -40,6 +42,6 @@ This README would normally document whatever steps are necessary to get your app
 
 ### Who do I talk to? ###
 
-* Lourdes Ramírez Santigosa
+* Lourdes Ramírez Santigosa.
+
 Solar Radiation Unit, Renewable Energy Division, CIEMAT, Spain
-* Other community or team contact
