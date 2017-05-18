@@ -7,7 +7,7 @@ MARINA (Multi annual radiation information approach) is a package of MATLAB® M-f
 
 This README would normally document whatever steps are necessary to get your application up and running.
 
-![Diagram](https://bitbucket.org/Malorasa/marina/src/875556c1cc5dbd8d5572a26db56e8ed405f314a5/other/marina-Files.png?raw=true "Diagram of the MARINA package")
+![Diagram](/other/marina-Files.png "Diagram of the MARINA package")
 
 ### Modules: ###
 
