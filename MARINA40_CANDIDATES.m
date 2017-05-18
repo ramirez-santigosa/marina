@@ -296,14 +296,18 @@ xlswrite(file_Out,LMR_ex,'outputLMR','A1');
 
 %% INPUT GENERATION
 % Write the inputs for series generation
-xlswrite(file_InputGen,{'DNI'},'VARIABLE','A1'); % Main variable
+mainVar = {'DNI'};
+xlswrite(file_InputGen,mainVar,'VARIABLE','A1'); % Main variable
+
+meth_head = {'TMY-IEC', 'TMY-LMR', 'DAN' 'F-R'};
+input_head = {'MONTH' meth_head{methS}};
 
 % Input
-input_ex = [{'MONTH', 'TMY', 'LMR'}; [headers_m, num2cell([outputTMY(:,1), outputLMR(:,1)])]];
+input_ex = [input_head; [headers_m, num2cell([outputTMY(:,1), outputLMR(:,1)])]];
 xlswrite(file_InputGen,input_ex,'INPUT','A1'); % Write candidates selected
 
 % Objective
-obj_ex = [{'MONTH', 'TMY', 'LMR'}; [headers_m, num2cell([outputTMY(:,2), outputLMR(:,2)])]];
+obj_ex = [input_head; [headers_m, num2cell([outputTMY(:,2), outputLMR(:,2)])]];
 xlswrite(file_InputGen,obj_ex,'OBJECTIVE','A1'); % Write objective DNI value
 
 %% Figures

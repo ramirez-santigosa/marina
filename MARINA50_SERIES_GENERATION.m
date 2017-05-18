@@ -15,7 +15,7 @@
 %       'dataval' structure of the selected years (i.e. loc00-owner_station-num-YYYY_VAL)
 %
 % OUTPUT:
-% ..\OUTPUT\5_TMY
+% ..\OUTPUT\5_TMY\NAME_SERIES
 %  (1) Excel report 'loc00-owner_station-num'-OUTPUT-GENERATION Sheets:
 %       - 'name_series'_D: Definitive daily radiation series of the typical year
 %       - 'name_series'_M: Definitive monthly radiation series of the typical year

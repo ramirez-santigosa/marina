@@ -14,12 +14,12 @@
 % INPUT INFORMATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% Input data
+%% a - Input data
 % Specific years of threatment
 year_ini = 1995; % Initial year of data
 year_end = 2014; % Final year of data. Use the same initial year in case of 1 year
 
-% Specific for Alice Spring
+% Specific for Alice Springs
 tzone = 9.5; % Specific time zone of the station location
 owner_station = 'BOM'; % Boureau of Meterology
 loc = 'ASP'; %
@@ -32,33 +32,34 @@ time_stamp = 0; % Values: 0/0.5/1 related to beginning/mid/end
 num_obs = 60; % Number of observations per hour
 no_data = NaN; % No data value
 
-%% General
+%% b - General
 num_years = year_end-year_ini+1; % Number of years
 num_days_m = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
 
-%% Format
+%% 1 - Format
 header = {'YYYY', 'MM', 'DD', 'HH', 'mm', 'ss', 'GHI', 'DNI', 'DHI'}; % Headers of the standard structure
 
-%% QC
+%% 2 - QC
 vars = logical([1 1 1]); % Variables for QC process [GHI DNI DHI] 1(true)/0(false)
 Isc = 1367; % Solar constant [W/m2]
 offset_empirical = 0; % Just in case the results seem to have timestamp mistakes
 max_rad = 1600; % Max. solar radiation value for the figures
 
-%% Validation
+%% 3 - Validation
 level = 4; % Level for validation. Defines since which flag value a day is valid according to the QC flags
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 max_dist = 5; % Maximum distance in the days used for the substitution
 
-%% Candidates
+%% 4 - Candidates
+methS = [true true false false]; % Array for select the methodologies to apply [TMY-IEC TMY-LMR Danish Festa-Ratto]
 num_cand = 5; % Number of candidates. Must be <= than the number of years
 if num_cand > num_years
     error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
 end
 nbins = 10; % Number of bins for cumulative distribution function
 
-%% Series Generation
-% max_dist = 5; % Maximum distance in the days used for the substitution
+%% 5 - Series Generation
+% max_dist = 5; % Maximum distance in the days used for the substitution (usually already defined in validation)
 max_times = 4; % Maximum number of times that the same day can be repeated
 max_subs = 8; % Maximum number of substitutions allowed each month
 
@@ -115,7 +116,7 @@ if iec_format
     options_iec.labels = labelsIEC;
 end
 
-%% Paths definition
+%% c - Paths definition
 path_in = '..\BSRNData'; % Input data in annual folders inside: .\aaaa\
 path_meteo = '..\METEOData'; % Meteo data in annual excel files
 path_format = '..\OUTPUT\1_FORMAT'; % Output standard data structure
