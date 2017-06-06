@@ -1,6 +1,6 @@
 function [name_out,data] = Year_BSRN_to_format...
     (path_in,path_out,num_obs,filedata,timedata,nodata,header,year)
-%YEAR_BSRN_TO_FORMAT Reads the input files and saves a standard format
+%YEAR_BSRN_TO_FORMAT Reads the BSRN input files and saves a standard format
 %structure.
 %   INPUT:
 %   path_in: Path of the input files

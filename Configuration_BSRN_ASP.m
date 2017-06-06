@@ -51,7 +51,7 @@ max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 max_dist = 5; % Maximum distance in the days used for the substitution
 
 %% 4 - Candidates
-methS = [true true false false]; % Array for select the methodologies to apply [TMY-IEC TMY-LMR Danish Festa-Ratto]
+methS = [true true false false false]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
 num_cand = 5; % Number of candidates. Must be <= than the number of years
 if num_cand > num_years
     error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
@@ -117,10 +117,10 @@ if iec_format
 end
 
 %% c - Paths definition
-path_in = '..\BSRNData'; % Input data in annual folders inside: .\aaaa\
+path_in = '..\BSRNData\ASP'; % Input data in annual files
 path_meteo = '..\METEOData'; % Meteo data in annual excel files
-path_format = '..\OUTPUT\1_FORMAT'; % Output standard data structure
-path_qc = '..\OUTPUT\2_QC'; % Output Quality Control
-path_val = '..\OUTPUT\3_VALIDATION'; % Output validation and gap filling
-path_cases = '..\OUTPUT\4_CASES'; % Output selection methodology
-path_tmy = '..\OUTPUT\5_TMY'; % Output annual series
+path_format = '..\OUT_ASP\1_FORMAT'; % Output standard data structure
+path_qc = '..\OUT_ASP\2_QC'; % Output Quality Control
+path_val = '..\OUT_ASP\3_VALIDATION'; % Output validation and gap filling
+path_cases = '..\OUT_ASP\4_TMYMETH'; % Output selected TMY methodology
+path_tmy = '..\OUT_ASP\5_ASR'; % Output annual solar radiation series

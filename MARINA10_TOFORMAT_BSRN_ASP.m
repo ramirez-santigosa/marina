@@ -10,7 +10,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\DATA\(ANNUAL DIRECTORIES PER YEAR)
-%       monthly files form BSRN (1995-2014)
+%       monthly files from BSRN (1995-2014)
 %       (i.e.: 'ASP_1995-01_0100.txt')
 %
 % OUTPUT:

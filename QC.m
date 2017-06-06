@@ -273,7 +273,7 @@ plot(GHIord(test3),GHIcalc(test3),'o', 'MarkerFaceColor',[0.5 1   0.5],'MarkerEd
 plot(GHIord(test4),GHIcalc(test4),'o', 'MarkerFaceColor',[0   0.8 0  ],'MarkerEdgeColor',[0   0.7 0  ]);
 plot([0 max_rad],[0 max_rad],'-k');
 
-leg=legend('NaN','Not FP','Rare','Coher','Best');
+leg=legend('NaN','Not FP','Rare','Coher','Best'); % Related with the flags '0','1',...'4'
 set(leg,'Location','SouthEast');
 axis([0 max_rad 0 max_rad]);
 title(file_name,'Fontsize',16,'Interpreter','none'); %title([file_name ' Consistency '],'Fontsize',16);

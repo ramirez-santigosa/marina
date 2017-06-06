@@ -1,8 +1,9 @@
 function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_nonvalid,max_dist)
 %VALIDA_MONTHS Evaluates the validity of each month of a complete year (365
 % days). A month is valid if has as much as 'max_nonvalid' non-valid days.
-% On valid months, non-valid days are replaced with the closest day to the
-% mean value. DNI is the main variable for determining replacements.
+% On valid months, non-valid days are substituted with the closest day to
+% the mean value, that is +-5 days from the orignal non-valid day. DNI is
+% the main variable for determining substitutions.
 %   INPUT:
 %   input_daily: Results of the daily validation of the year (output of the
 %   'valida_days' function for all days in one year). These results always
@@ -29,7 +30,7 @@ function [daily,monthly,replaced,nonvalid_m] = valida_months(input_daily,max_non
 %       4 - # month
 %       5 - Monthly DNI (kWh/m2). NaN if it isn't valid
 %       6 - Flag monthly DNI validation
-%   replaced: Replacements in a year. Columns:
+%   replaced: Substitutions in a year. Columns:
 %       1 - Month
 %       2 - Origin day
 %       3 - Replaced day
