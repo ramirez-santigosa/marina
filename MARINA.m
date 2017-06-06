@@ -11,10 +11,11 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Configuration file
-Configuration_BSRN_ASP
+% cfgFile = 'Configuration_BSRN_ASP.m';
+cfgFile = 'Configuration_PSA.m';
 
 %% Module 1: To Format
-MARINA10_TOFORMAT_BSRN_ASP
+MARINA10_TOFORMAT
 
 %% Module 2: Quality Control
 MARINA20_QC

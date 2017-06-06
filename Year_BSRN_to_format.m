@@ -3,7 +3,11 @@ function [name_out,data] = Year_BSRN_to_format...
 %YEAR_BSRN_TO_FORMAT Reads the BSRN input files and saves a standard format
 %structure.
 %   INPUT:
-%   path_in: Path of the input files
+%   path_in: Path of the input files. BSRN data usually comes structured in
+%   folders
+%   ..\path_in\(ANNUAL DIRECTORIES PER YEAR)
+%       monthly files from BSRN (i.e.: 'ASP_1995-01_0100.txt',
+%       'ASP_1995-02_0100.txt'...)
 %   path_out: Path of the folder where standard structures will be saved
 %   num_obs: Number of observations per hour
 %   filedata: Info for identification and creation of the output file name

@@ -6,16 +6,14 @@
 %
 % MODULE 1: TOFORMAT
 % Version of July, 2015. L. Ramírez; At CSIRO.
-% Update F. Mendoza (February 2017) at CIEMAT.
+% Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
-% ..\DATA\(ANNUAL DIRECTORIES PER YEAR)
-%       monthly files from BSRN (1995-2014)
-%       (i.e.: 'ASP_1995-01_0100.txt')
+% ..\INPUT\(Directory or file structure according to the input format)
 %
 % OUTPUT:
 % ..\OUTPUT\1_FORMAT\
-% (1)   One Matlab file per year: data i.e. 'ASP00-BOM-01-YYYY'
+% (1)   One Matlab file per year i.e. 'loc00-owner_station-num-YYYY'
 %       Each file contains the structured variable 'data'
 % (2)   One Matlab file per year i.e. 'SummaryYYYY'
 %       aaaa mmm GHI DNI DHI
@@ -39,6 +37,9 @@
 %                           YYYY MM DD HH mm ss GHI DNI DHI
 % data.mat:                 matrix of data
 
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
+
 %% Data assignment
 
 filedata.own = owner_station;
@@ -59,7 +60,16 @@ for y = year_ini:year_end
     fprintf('Treatment of %s year %s\n',name,year_str);
     filedata.ID = year_str;
     
-    [name_out,data] = Year_BSRN_to_format(path_in,path_format,num_obs,filedata,timedata,nodata,header,y);
+    switch inputFormat
+        case 'BSRN'
+            [name_out,data] = Year_BSRN_to_format(path_in,path_format,num_obs,filedata,timedata,nodata,header,y);
+        case 'MESOR'
+            [name_out,data] = Year_MESOR_to_format(path_in,path_format,num_obs,filedata,timedata,nodata,header,y);
+        otherwise
+            warning('Not valid input format.');
+            break
+    end
+    
     save(strcat(path_format,'\',name_out),'data'); % Save the standard format structure
     
 end
