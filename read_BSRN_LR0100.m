@@ -15,7 +15,7 @@ function [ok,ID,geo,dates,data,col] = read_BSRN_LR0100(filename)
 %   col: Structure
 %        col.GHI: GHI column position
 %        col.DHI: DHI column position
-%        col.DNI: DHI column position
+%        col.DNI: DNI column position
 %        col.LWD: LWD column position
 %
 % - L. Ramírez (May 2015)

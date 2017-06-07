@@ -16,8 +16,8 @@
 % (1)   One Matlab file per year i.e. 'loc00-owner_station-num-YYYY'
 %       Each file contains the structured variable 'data'
 % (2)   One Matlab file per year i.e. 'SummaryYYYY'
-%       aaaa mmm GHI DNI DHI
-%       Values: -1 no file; 0 wrong file; column number in the INPUT file
+%       GHI DNI DHI
+%       Values: -1 no data; 0 wrong data; column number in the input file
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Data structure outline
@@ -34,7 +34,7 @@
 % data.timedata.num_obs:    number of observations per hour
 % data.nodata:              no data value
 % data.header:              headers of the matrix columns
-%                           YYYY MM DD HH mm ss GHI DNI DHI
+%                           YYYY MM DD HH mm ss GHI DNI DHI others
 % data.mat:                 matrix of data
 
 close, clearvars -except cfgFile, %clc
@@ -46,7 +46,7 @@ filedata.own = owner_station;
 filedata.loc = loc;
 filedata.name = name;
 filedata.num = num;
-% geodata is read from data file (lat, lon, alt)
+% geodata is read from data files (lat, lon, alt)
 timedata.timezone = ref_temp; % Time reference in which data is acquired
 timedata.stamp = time_stamp;
 timedata.num_obs = num_obs;
@@ -64,12 +64,14 @@ for y = year_ini:year_end
         case 'BSRN'
             [name_out,data] = Year_BSRN_to_format(path_in,path_format,num_obs,filedata,timedata,nodata,header,y);
         case 'MESOR'
-            [name_out,data] = Year_MESOR_to_format(path_in,path_format,num_obs,filedata,timedata,nodata,header,y);
+            [name_out,data] = Year_MESOR_to_format(path_in,path_format,filedata,timedata,nodata,header,y);
         otherwise
             warning('Not valid input format.');
             break
     end
     
-    save(strcat(path_format,'\',name_out),'data'); % Save the standard format structure
+    if ~isempty(data)
+        save(strcat(path_format,'\',name_out),'data'); % Save the standard format structure
+    end
     
 end

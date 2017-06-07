@@ -120,7 +120,7 @@ hleg = legend('GHI','DNI','DHI');
 set(hleg,'Location','SouthEastOutside');
 set(hleg,'Fontsize',16);
 grid on;
-% saveas(gcf,strcat(ruta_out,'\','Summary',aaaa),'png');
+% saveas(gcf,strcat(path_out,'\','Summary',yyyy),'png');
 print('-djpeg','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
 
 %% Make a structure for each year
