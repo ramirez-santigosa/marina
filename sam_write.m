@@ -19,18 +19,6 @@ function [ ST ] = sam_write(filename_out,sam_out,num_obs,options_sam)
 %
 % - F. Mendoza (May 2017)
 
-% Continuous day in the month along the year (override day substitutions for final csv file)
-m31 = zeros(1,31*24*num_obs); k = 1;
-for d = 1:31
-    for o = 1:24*num_obs
-        m31(1,k) = d;
-        k = k+1;
-    end
-end
-m30 = m31(1,1:30*24*num_obs); m28 = m31(1,1:28*24*num_obs);
-year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
-sam_out(:,3) = year_d; % Update days without substitutions [Year Month "Day"]
-
 headerSAM{1,1} = 'Source,Location ID,City,Region,Country,Latitude,Longitude,Time Zone,Elevation';
 headerSAM{2,1} = [options_sam.source,',',options_sam.locID,',',...
     options_sam.city,',',options_sam.reg,',',options_sam.country,',',...

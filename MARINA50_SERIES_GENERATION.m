@@ -261,6 +261,18 @@ for i=1:n_series
     if sam_format
         filename_out = strcat(path_series,'\','SAM_',namef,'_',name_series,'.csv');
         sam_out = SERIES_out_int(:,[1:5,7,9,11],i); % [Year Month Day Hour Minute GHI DNI DHI]. Without the flags
+        % Continuous day in the month along the year (override day substitutions for final csv file)
+        m31 = zeros(1,31*24*num_obs); l = 1;
+        for d = 1:31
+            for o = 1:24*num_obs
+                m31(1,l) = d;
+                l = l+1;
+            end
+        end
+        m30 = m31(1,1:30*24*num_obs); m28 = m31(1,1:28*24*num_obs);
+        year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
+        sam_out(:,3) = year_d; % Update days without substitutions [Year Month "Day"]
+                
         options_sam.lat = dataval.geodata.lat; % Add geodata from data validation structure
         options_sam.lon = dataval.geodata.lon;
         options_sam.alt = dataval.geodata.alt;
