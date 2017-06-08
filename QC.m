@@ -59,12 +59,13 @@ end
 GHI = input(:,cols.GHI); % Variables arrays
 DNI = input(:,cols.DNI);
 DHI = input(:,cols.DHI);
+others = input(:,cols.others); nOthers = size(others,2);
 
 %% Assessing the hours jump needed in the time data
 off = str2double(time(4:end)); % Offset of the input data
 jumpH = tzone - off; % Shift between the time zone of the station and the time reference of the input data
 
-if tzone >= 0 % String with the time zone of the station
+if tzone>=0 % String with the time zone of the station
     timeZ = strcat('UTC+',num2str(tzone));
 else
     timeZ = strcat('UTC-',num2str(tzone));
@@ -101,6 +102,7 @@ lines = numel(days_num_ord); % Number of observations in a complete year
 GHIord = NaN(lines,1);
 DNIord = NaN(lines,1);
 DHIord = NaN(lines,1);
+othersord = NaN(lines,nOthers);
 
 %% Assigment of the available values to its corresponding position in the complete array
 
@@ -114,7 +116,10 @@ pos_obs_INI = date_num_obs-date_obs_ord(1)+1;
 % reference of the data.
 After = pos_obs_INI > lines;
 pos_obs_INI(After) = [];
-GHI(After) = []; DNI(After) = []; DHI(After) = [];
+GHI(After) = []; DNI(After) = []; DHI(After) = []; 
+if ~isempty(others)
+    others(After,:) = [];
+end
 
 % If jumpH < 0: Search the positions lower that 1, i.e., those before of
 % the first observation of the year in the local time of the station
@@ -122,11 +127,15 @@ GHI(After) = []; DNI(After) = []; DHI(After) = [];
 Before = pos_obs_INI < 1;
 pos_obs_INI(Before) = [];
 GHI(Before) = []; DNI(Before) = []; DHI(Before) = [];
+if ~isempty(others)
+    others(Before,:) = [];
+end
 
 % Assignment of the variables values to the corresponding date
 GHIord(pos_obs_INI) = GHI; % In the station time zone
 DNIord(pos_obs_INI) = DNI; % In the station time zone
 DHIord(pos_obs_INI) = DHI; % In the station time zone
+othersord(pos_obs_INI,:) = others;
 
 %% Astronomical calculations
 
@@ -152,44 +161,58 @@ cosz = astro(:,8); % Cosine of the solar zenith angle
 % - low: Solar elevation angle below 0 degrees. Applicable for Tests #1 y 2
 % - others
 
-% Pre-allocate
-fGHI = zeros(size(GHIord));
-fDNI = zeros(size(DNIord));
-fDHI = zeros(size(DHIord));
-
 % Creating the groups of data
 sZenithA = acos(cosz)*180/pi; % Solar zenith angle. Solar zenith and Solar elevation angles are complementary (alpha=90°-theta)
 low = sZenithA>=90; % alpha<=0°, theta>=90°
 
-% Setting the limits of the variables and groups
-maxG = Isc.*e0*1.5.*((cosz.^12).^0.1)+100;
-maxG(low) = 100; % Fixed maximum in this case
-maxD = Isc.*e0*0.95.*((cosz.^12).^0.1)+50;
-maxD(low) = 50; % Fixed maximum in this case
-maxB = Isc.*e0;
-
-% Flag assigment
-% Those values that fail to pass the test #1 are flagged with '0'
-test1 = (GHIord>=-4 & GHIord<=maxG); fGHI(test1) = 1; clearvars test1
-test1 = (DHIord>=-4 & DHIord<=maxD); fDHI(test1) = 1; clearvars test1
-test1 = (DNIord>=-4 & DNIord<=maxB); fDNI(test1) = 1; clearvars test1
-clearvars maxG maxD maxB
+if vars(1)==1 % GHI
+    fGHI = zeros(size(GHIord)); % Pre-allocate
+    maxG = Isc.*e0*1.5.*(cosz.^1.2)+100; % Setting the limits of the variables and groups
+    maxG(low) = 100; % Fixed maximum in this case
+    % Flag assigment
+    test1 = (GHIord>=-4 & GHIord<=maxG); fGHI(test1) = 1; % Those values that fail to pass the test #1 are flagged with '0'
+    clearvars test1 maxG
+end
+if vars(2)==1 % DNI
+    fDNI = zeros(size(DNIord)); % Pre-allocate
+    maxB = Isc.*e0; % Setting the limits of the variables and groups
+    % Flag assigment
+    test1 = (DNIord>=-4 & DNIord<=maxB); fDNI(test1) = 1;
+    clearvars test1 maxB
+end
+if vars(3)==1 % DHI
+    fDHI = zeros(size(DHIord)); % Pre-allocate
+    maxD = Isc.*e0*0.95.*(cosz.^1.2)+50; % Setting the limits of the variables and groups
+    maxD(low) = 50; % Fixed maximum in this case
+    % Flag assigment
+    test1 = (DHIord>=-4 & DHIord<=maxD); fDHI(test1) = 1;
+    clearvars test1 maxD
+end
 
 %% TEST #2: Extremely Rare Limits ----------------------------------------
-% Setting the limits of the variables and groups
-maxG = Isc.*e0*1.2.*((cosz.^12).^0.1)+50;
-maxG(low) = 50;
-maxD = Isc.*e0*0.75.*((cosz.^12).^0.1)+30;
-maxD(low) = 30;
-maxB = Isc.*e0*0.95.*((cosz.^2).^0.1)+10;
-maxB(low) = 10;
+if vars(1)==1 % GHI
+    maxG = Isc.*e0*1.2.*(cosz.^1.2)+50; % Setting the limits of the variables and groups
+    maxG(low) = 50;
+    % Flag assigment
+    test2 = (GHIord>=-2 & GHIord<=maxG & fGHI==1); fGHI(test2) = 2; % Those values that fail to pass the test #2 are flagged with '1'
+    clearvars test2 % maxG Don't clear maximum limits used in the third test
+end
+if vars(2)==1 % DNI
+    maxB = Isc.*e0*0.95.*(cosz.^0.2)+10; % Setting the limits of the variables and groups
+    maxB(low) = 10;
+    % Flag assigment
+    test2 = (DNIord>=-2 & DNIord<=maxB & fDNI==1); fDNI(test2) = 2;
+    clearvars test2 % maxB Don't clear maximum limits used in the third test
+end
+if vars(3)==1 % DHI
+    maxD = Isc.*e0*0.75.*(cosz.^1.2)+30; % Setting the limits of the variables and groups
+    maxD(low) = 30;
+    % Flag assigment
+    test2 = (DHIord>=-2 & DHIord<=maxD & fDHI==1); fDHI(test2) = 2;
+    clearvars test2 % maxD Don't clear maximum limits used in the third test
+end
 
-% Flag assigment
-% Those values that fail to pass the test #2 are flagged with '1'
-test2 = (GHIord>=-2 & GHIord<=maxG & fGHI==1); fGHI(test2) = 2; clearvars test2
-test2 = (DHIord>=-2 & DHIord<=maxD & fDHI==1); fDHI(test2) = 2; clearvars test2
-test2 = (DNIord>=-2 & DNIord<=maxB & fDNI==1); fDNI(test2) = 2; clearvars test2
-clearvars low % maxG maxD maxB % Don't clear maximum limits
+clearvars low
 
 %% TEST #3: Comparisons ---------------------------------------------------
 % For those values in which this test isn't applicable (measured or calculated
@@ -200,137 +223,145 @@ clearvars low % maxG maxD maxB % Don't clear maximum limits
 % - high: solar elevation higher than 15, and GHI>50 W/m2
 % - others
 
-% CONDITION IMPOSED TO THE DIFFUSE RADIATION
-ffDHI = fDHI; % A temp variable is used to apply a previous condition to the diffuse irradiance
-
-% Second relationship: checks that the diffuse percentage of global
-% radiation is not over specific limits. This condition can only be applied
-% to records in which the measured global irradiance is over 50 W/m2.
-
-% Creating the groups with the input measured GHI data
-high = (sZenithA<75 & GHIord>50); % alpha>15°, theta<75°
-low = (sZenithA>=75 & sZenithA<93 & GHIord>50); % -3°<alpha<=15°, 75°<=theta<93°
-
-% Setting limits
-maxD(high) = 1.05*GHIord(high); % For theta<75°
-maxD(low) = 1.10*GHIord(low); % For 75°<theta<93°
-
-% Flag assigment
-% Those values that fail to pass the test #3.2 are flagged with '2'
-test32 = (DHIord<=maxD & fGHI==2 & fDHI==2 & fDNI==2); ffDHI(test32)=3; clearvars test32
-clearvars low high
-
-% CONDITION IMPOSED TO ALL THREE VARIABLES
-% First relationship: measured direct global irradiance is compared with
-% the value calculated from its measured components. This condition can
-% only be applied to records in which the calculated global irradiance is
-% over 50 W/m2.
-GHIcalc = DHIord+DNIord.*cosz;
-
-% Creating the groups with the calculated GHI data
-high = (sZenithA<75 & GHIcalc>50); % alpha>15°, theta<75°
-low = (sZenithA>=75 & sZenithA<93 & GHIcalc>50); % -3°<alpha<=15°, 75°<=theta<93°
-
-% Setting limits
-maxG(high) = 1.08.*GHIcalc(high); % For theta<75°
-maxG(low) = 1.15.*GHIcalc(low); % For 75°<theta<93°
-minG = zeros(size(GHIcalc))-2; % Preguntar por el minimo según paper?!!!
-minG(high) = 0.92.*GHIcalc(high);
-minG(low) = 0.85.*GHIcalc(low);
-
-% Flag assigment
-% Those values that fail to pass the test #3 are flagged with '2'
-test3 = (GHIord>=minG & GHIord<=maxG & fGHI==2 & fDNI==2 & ffDHI==3);
-fGHI(test3) = 3;
-fDHI(test3) = 3;
-fDNI(test3) = 3;
-clearvars high low
+if sum(vars)==3 % The three variables are required for the first relationship
+    % CONDITION IMPOSED TO THE DIFFUSE RADIATION
+    ffDHI = fDHI; % A temp variable is used to apply a previous condition to the diffuse irradiance
+    
+    % Second relationship: checks that the diffuse percentage of global
+    % radiation is not over specific limits. This condition can only be applied
+    % to records in which the measured global irradiance is over 50 W/m2.
+    
+    % Creating the groups with the input measured GHI data
+    high = (sZenithA<75 & GHIord>50); % alpha>15°, theta<75°
+    low = (sZenithA>=75 & sZenithA<93 & GHIord>50); % -3°<alpha<=15°, 75°<=theta<93°
+    
+    % Setting limits
+    maxD(high) = 1.05*GHIord(high); % For theta<75°
+    maxD(low) = 1.10*GHIord(low); % For 75°<theta<93°
+    
+    % Flag assigment
+    % Those values that fail to pass the test #3.2 are flagged with '2'
+    test32 = (DHIord<=maxD & fGHI==2 & fDHI==2 & fDNI==2); ffDHI(test32)=3;
+    clearvars test32 high low
+    
+    % CONDITION IMPOSED TO ALL THREE VARIABLES
+    % First relationship: measured direct global irradiance is compared with
+    % the value calculated from its measured components. This condition can
+    % only be applied to records in which the calculated global irradiance is
+    % over 50 W/m2.
+    GHIcalc = DHIord+DNIord.*cosz;
+    
+    % Creating the groups with the calculated GHI data
+    high = (sZenithA<75 & GHIcalc>50); % alpha>15°, theta<75°
+    low = (sZenithA>=75 & sZenithA<93 & GHIcalc>50); % -3°<alpha<=15°, 75°<=theta<93°
+    
+    % Setting limits
+    maxG(high) = 1.08.*GHIcalc(high); % For theta<75°
+    maxG(low) = 1.15.*GHIcalc(low); % For 75°<theta<93°
+    minG = zeros(size(GHIcalc))-2; % Preguntar por el minimo según paper?!!!
+    minG(high) = 0.92.*GHIcalc(high);
+    minG(low) = 0.85.*GHIcalc(low);
+    
+    % Flag assigment
+    % Those values that fail to pass the test #3 are flagged with '2'
+    test3 = (GHIord>=minG & GHIord<=maxG & fGHI==2 & fDNI==2 & ffDHI==3);
+    fGHI(test3) = 3;
+    fDHI(test3) = 3;
+    fDNI(test3) = 3;
+    
+    clearvars high low
+end
 
 %% NEW TEST #4: Some impossible were slipping through ---------------------
 % GHI values between GHI calculated +- 50
-test4 = ((GHIord>GHIcalc-50 & GHIord<GHIcalc+50) & test3);
-fGHI(test4) = 4;
-fDNI(test4) = 4;
-fDHI(test4) = 4;
+if sum(vars)==3 % The three variables are required
+    test4 = ((GHIord>GHIcalc-50 & GHIord<GHIcalc+50) & test3);
+    fGHI(test4) = 4;
+    fDHI(test4) = 4;
+    fDNI(test4) = 4;
+end
 
 % Save results
 fGHIF = fGHI; fDNIF = fDNI; fDHIF = fDHI;
+clear test0 test1 test2 test3 test4
 
 %% GRAPHS OF QUALITY CONTROL RESULTS
 % Coherence of the three variables per year -------------------------------
-
-test0 = fGHI==0;
-test1 = fGHI==1;
-test2 = fGHI==2;
-test3 = fGHI==3;
-test4 = fGHI==4;
-
-figure
-plot(GHIord(test0),GHIcalc(test0),'o', 'MarkerFaceColor',[1   0   0  ],'MarkerEdgeColor',[0.8 0   0  ]); hold on
-plot(GHIord(test1),GHIcalc(test1),'o', 'MarkerFaceColor',[1   0.5 0  ],'MarkerEdgeColor',[0.8 0.3 0  ]);
-plot(GHIord(test2),GHIcalc(test2),'o', 'MarkerFaceColor',[1   1   0  ],'MarkerEdgeColor',[0.8 0.8 0  ]);
-plot(GHIord(test3),GHIcalc(test3),'o', 'MarkerFaceColor',[0.5 1   0.5],'MarkerEdgeColor',[0.3 0.8 0.3]);
-plot(GHIord(test4),GHIcalc(test4),'o', 'MarkerFaceColor',[0   0.8 0  ],'MarkerEdgeColor',[0   0.7 0  ]);
-plot([0 max_rad],[0 max_rad],'-k');
-
-leg=legend('NaN','Not FP','Rare','Coher','Best'); % Related with the flags '0','1',...'4'
-set(leg,'Location','SouthEast');
-axis([0 max_rad 0 max_rad]);
-title(file_name,'Fontsize',16,'Interpreter','none'); %title([file_name ' Consistency '],'Fontsize',16);
-xlabel('GHI Measures','Fontsize',14,'FontWeight','bold');
-ylabel('GHI calculated','Fontsize',14,'FontWeight','bold');
-grid on;
-axis square
-set(gca,'XTick',0:400:max_rad);
-set(gca,'YTick',0:400:max_rad);
-print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_COHER'))
-
-%% Monthly coherence graphs -----------------------------------------------
-
-tst_vec = datevec(tst_num); % 6X1 date array
-path_fig_month = strcat(path_fig,'\Monthly');
-
-if ~exist(path_fig_month,'dir')
-    mkdir(path_fig_month);
-end
-clear test0 test1 test2 test3
-
-for m=1:12
-    data_month = (tst_vec(:,2)==m);
-    m_str = num2str(m);
-    if m<10 % Two character month
-        m_str=['0' num2str(m)];
-    end
-    
-    test0 = (fGHI == 0 & data_month);
-    test1 = (fGHI == 1 & data_month);
-    test2 = (fGHI == 2 & data_month);
-    test3 = (fGHI == 3 & data_month);
-    test4 = (fGHI == 4 & data_month);
+if sum(vars)==3
+    test0 = fGHI==0;
+    test1 = fGHI==1;
+    test2 = fGHI==2;
+    test3 = fGHI==3;
+    test4 = fGHI==4;
     
     figure
-    plot(GHIord(test0),GHIcalc(test0),'o', 'MarkerFaceColor',[1   0   0  ],'MarkerEdgeColor',[ 0.8 0   0  ]); hold on
-    plot(GHIord(test1),GHIcalc(test1),'o', 'MarkerFaceColor',[1   0.5 0  ],'MarkerEdgeColor',[ 0.8 0.3 0  ]);
-    plot(GHIord(test2),GHIcalc(test2),'o', 'MarkerFaceColor',[1   1   0  ],'MarkerEdgeColor',[ 0.8 0.8 0  ]);
-    plot(GHIord(test3),GHIcalc(test3),'o', 'MarkerFaceColor',[0.5 1   0.5],'MarkerEdgeColor',[ 0.3 0.8 0.3]);
-    plot(GHIord(test4),GHIcalc(test4),'o', 'MarkerFaceColor',[0   0.8 0  ],'MarkerEdgeColor',[ 0 0.7   0  ]);
-    plot([0 max_rad],[0 max_rad] ,'-k');
+    p0 = plot(GHIord(test0),GHIcalc(test0),'o','DisplayName','Not Phy','MarkerFaceColor',[1   0   0  ],'MarkerEdgeColor',[0.8 0   0  ]); hold on
+    p1 = plot(GHIord(test1),GHIcalc(test1),'o','DisplayName','Rare','MarkerFaceColor',[1   0.5 0  ],'MarkerEdgeColor',[0.8 0.3 0  ]);
+    p2 = plot(GHIord(test2),GHIcalc(test2),'o','DisplayName','Incoher','MarkerFaceColor',[1   1   0  ],'MarkerEdgeColor',[0.8 0.8 0  ]);
+    p3 = plot(GHIord(test3),GHIcalc(test3),'o','DisplayName','Coher','MarkerFaceColor',[0.5 1   0.5],'MarkerEdgeColor',[0.3 0.8 0.3]);
+    p4 = plot(GHIord(test4),GHIcalc(test4),'o','DisplayName','Best','MarkerFaceColor',[0   0.8 0  ],'MarkerEdgeColor',[0   0.7 0  ]);
+    plot([0 max_rad],[0 max_rad],'-k');
     
+    legend([p0 p1 p2 p3 p4],'Location','SouthEast'); % Related with the flags '0','1',...'4'
     axis([0 max_rad 0 max_rad]);
-    title([file_name ' Month ' m_str ' Consistency ' ],'Fontsize',16,'Interpreter','none');
-    xlabel('GHI Measures','Fontsize',16);
-    ylabel('GHI calculated','Fontsize',16);
-    grid on;
-    print('-djpeg','-opengl','-r350',strcat(path_fig_month,'\',file_name,'_COHER_M',m_str))
+    title(file_name,'Fontsize',16,'Interpreter','none'); %title([file_name ' Consistency '],'Fontsize',16);
+    xlabel('GHI measures [W/m^2]','Fontsize',14,'FontWeight','bold');
+    ylabel('GHI calculated [W/m^2]','Fontsize',14,'FontWeight','bold');
+    grid on; axis square
+    set(gca,'XTick',0:400:max_rad);
+    set(gca,'YTick',0:400:max_rad);
+    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_COHER'))
+end
+clear test0 test1 test2 test3 test4
 
+%% Monthly coherence graphs -----------------------------------------------
+if sum(vars)==3
+    tst_vec = datevec(tst_num); % 6X1 date array
+    path_fig_month = strcat(path_fig,'\Monthly');
+    
+    if ~exist(path_fig_month,'dir')
+        mkdir(path_fig_month);
+    end
+    
+    for m=1:12
+        data_month = (tst_vec(:,2)==m);
+        m_str = num2str(m);
+        if m<10 % Two character month
+            m_str=['0' num2str(m)];
+        end
+        
+        test0 = (fGHI == 0 & data_month);
+        test1 = (fGHI == 1 & data_month);
+        test2 = (fGHI == 2 & data_month);
+        test3 = (fGHI == 3 & data_month);
+        test4 = (fGHI == 4 & data_month);
+        
+        figure
+        plot(GHIord(test0),GHIcalc(test0),'o','DisplayName','Not Phy','MarkerFaceColor',[1   0   0  ],'MarkerEdgeColor',[ 0.8 0   0  ]); hold on
+        plot(GHIord(test1),GHIcalc(test1),'o','DisplayName','Rare','MarkerFaceColor',[1   0.5 0  ],'MarkerEdgeColor',[ 0.8 0.3 0  ]);
+        plot(GHIord(test2),GHIcalc(test2),'o','DisplayName','Incoher','MarkerFaceColor',[1   1   0  ],'MarkerEdgeColor',[ 0.8 0.8 0  ]);
+        plot(GHIord(test3),GHIcalc(test3),'o','DisplayName','Coher','MarkerFaceColor',[0.5 1   0.5],'MarkerEdgeColor',[ 0.3 0.8 0.3]);
+        plot(GHIord(test4),GHIcalc(test4),'o','DisplayName','Best','MarkerFaceColor',[0   0.8 0  ],'MarkerEdgeColor',[ 0 0.7   0  ]);
+        plot([0 max_rad],[0 max_rad] ,'-k','DisplayName','');
+        
+        legend('show','Location','SouthEast'); % Related with the flags '0','1',...'4'
+        axis([0 max_rad 0 max_rad]);
+        title([file_name ' Month ' m_str ' Consistency ' ],'Fontsize',16,'Interpreter','none');
+        xlabel('GHI measures [W/m^2]','Fontsize',14,'FontWeight','bold');
+        ylabel('GHI calculated [W/m^2]','Fontsize',14,'FontWeight','bold');
+        grid on; axis square
+        set(gca,'XTick',0:400:max_rad);
+        set(gca,'YTick',0:400:max_rad);
+        print('-djpeg','-opengl','-r350',strcat(path_fig_month,'\',file_name,'_COHER_M',m_str))
+    end
 end
 
 %% ANNUAL QUALITY MAPS
 
 % Trick for all graphs to have the 5 different values
-% fGHI(1)=-1; fGHI(2)=0; fGHI(3)=1; fGHI(4)=2; fGHI(5)=3;
-% fDNI(1)=-1; fDNI(2)=0; fDNI(3)=1; fDNI(4)=2; fDNI(5)=3;
-% fDHI(1)=-1; fDHI(2)=0; fDHI(3)=1; fDHI(4)=2; fDHI(5)=3;
+% fGHI(1)=0; fGHI(2)=1; fGHI(3)=2; fGHI(4)=3; fGHI(5)=4;
+% fDNI(1)=0; fDNI(2)=1; fDNI(3)=2; fDNI(4)=3; fDNI(5)=4;
+% fDHI(1)=0; fDHI(2)=1; fDHI(3)=2; fDHI(4)=3; fDHI(5)=4;
 
 % Generic data on sunrise, noon, sunset hours. It identifies w position
 % depending of num_obs (0.26 rad = 1 hour)
@@ -435,7 +466,7 @@ end
 
 % DATE PROCESSING: Out in station local time
 LT_vec = datevec(days_num_ord);
-output = [LT_vec GHIord fGHIF DNIord fDNIF DHIord fDHIF];
+output = [LT_vec GHIord fGHIF DNIord fDNIF DHIord fDHIF othersord];
 % pos_nodata = (isnan(output)); output(pos_nodata) = -999;
 
 data.timedata.timezone = timeZ;

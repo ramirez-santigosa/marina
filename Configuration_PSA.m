@@ -41,7 +41,7 @@ header = {'YYYY','MM','DD','HH','mm','ss','GHI [W/m^2]','DNI [W/m^2]','DHI [W/m^
     't_air [degC]','rh [%]','bp [hPa]','ws [m/s]'}; % Headers of the standard structure
 
 %% 2 - QC
-vars = logical([1 1 1]); % Variables for QC process [GHI DNI DHI] 1(true)/0(false)
+vars = [1 1 1]; % Variables for QC process [GHI DNI DHI] 1(true)/0(false). Remember, for Test #3 the three variables are required.
 Isc = 1367; % Solar constant [W/m2]
 offset_empirical = 0; % Just in case the results seem to have timestamp mistakes
 max_rad = 1600; % Max. solar radiation value for the figures
@@ -120,8 +120,9 @@ end
 %% c - Paths definition
 path_in = '..\PSAData'; % Input data in annual files
 % path_meteo = '..\METEOData'; % Additional meteo data if required
-path_format = '..\OUT_PSA\1_FORMAT'; % Output standard data structure
-path_qc = '..\OUT_PSA\2_QC'; % Output Quality Control
-path_val = '..\OUT_PSA\3_VALIDATION'; % Output validation and gap filling
-path_cases = '..\OUT_PSA\4_TMYMETH'; % Output selected TMY methodology
-path_tmy = '..\OUT_PSA\5_ASR'; % Output annual solar radiation series
+path_out = '..\OUT_PSA';
+path_format = [path_out '\1_FORMAT']; % Output standard data structure
+path_qc = [path_out '\2_QC']; % Output Quality Control
+path_val = [path_out '\3_VALIDATION']; % Output validation and gap filling
+path_cases = [path_out '\4_TMYMETH']; % Output selected TMY methodology
+path_tmy = [path_out '\5_ASR']; % Output annual solar radiation series

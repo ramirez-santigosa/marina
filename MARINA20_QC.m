@@ -26,8 +26,8 @@
 %       Figures GHI measured vs. calculated
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-close, clearvars, %clc
-run('Configuration_BSRN_ASP.m');
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
 for y = year_ini:year_end
     
@@ -39,16 +39,27 @@ for y = year_ini:year_end
         mkdir(path_fig_year_ini);
     end
     
-    % Columns of the variable in the data matrix
+    ID = year_str;
+    name_out = [loc '00-' owner_station '-' num '-' ID];
+    name_in = strcat(path_format,'\',name_out,'.mat');
+    if exist(name_in,'file')==2
+        load(name_in); % Load of the standard data structure
+    else
+        warning('The file %s does not exist.\n The year %d will be skipped in the QC process.',...
+            name_in,y);
+        continue
+    end
+    
+    % Columns of the variable in the standard data matrix
     mat_cols.date = 1:6;
     mat_cols.GHI = 7;
     mat_cols.DNI = 8;
     mat_cols.DHI = 9;
-    
-    ID = year_str;
-    
-    name_out = [loc '00-' owner_station '-' num '-' ID];
-    load(strcat(path_format,'\',name_out)); % Load of the standard data structure
+    if size(data.mat,2)>9
+        mat_cols.others = 10:size(data.mat,2);
+    else
+        mat_cols.others = [];
+    end
     
     dataqc = QC(path_fig_year_ini,data,vars,max_rad,mat_cols,tzone,name,Isc,offset_empirical);
     close all

@@ -1,4 +1,4 @@
-function [ dataDaysVal ] = plotdays_val( iniDay, finalDay, variables )
+function [ dataDaysVal ] = plotdays_val( cfgFile, iniDay, finalDay, variables )
 %PLOTDAYS Extract and plot the data after quality control process between
 %two specific days of the same year
 %   INPUT:
@@ -12,8 +12,8 @@ function [ dataDaysVal ] = plotdays_val( iniDay, finalDay, variables )
 %   Figure 1: Radiation values of the selected variables along the days
 %   Figures 2 - 4: Each radiation variable with its quality control flag
 
-run('Configuration_BSRN_ASP.m');
-path_fig = '..\OUTPUT\figures';
+run(cfgFile);
+path_fig = [path_out '\figures'];
 if ~exist(path_fig,'dir')
     mkdir(path_fig);
 end
