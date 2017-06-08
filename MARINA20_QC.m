@@ -19,7 +19,7 @@
 %       Each file contains the structured variable 'dataqc'
 %       Same as "data" but adding two fields
 %       (records are sorted and the year is complete)
-%  (1)  dataqc.mqc  = [date_vec(:,1:6)(TST) GHIord fGHI DNIord fDNI DHIord fDHI]
+%  (1)  dataqc.mqc  = [date_vec(:,1:6)(TST) GHIord fGHI DNIord fDNI DHIord fDHI others]
 %  (2)  datosqc.astro = [dj e0 ang_day et tst_hours w dec cosz G0 m]
 %
 %       Figures Tests per variables

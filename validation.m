@@ -13,7 +13,7 @@ function [dataval] = validation(dataqc,level,max_nonvalid,max_dist)
 %   OUTPUT:
 %   dataval: Input QC data structure with 5 aditional fields. 'mqc' matrix is
 %   updated if some data is interpolated in the daily validation or if some
-%   days are replaced in the monthly validation. February 29th of leap
+%   days are substituted in the monthly validation. February 29th of leap
 %   years is trimmed in 'mqc' and 'astro' matrices. Added fields:
 %       dataval.interp: Saves the number of interpolated data in each day
 %       for GHI and DNI. It is a cell with two matrices. Columns:
@@ -37,11 +37,11 @@ function [dataval] = validation(dataqc,level,max_nonvalid,max_dist)
 %       4 - # month
 %       5 - Monthly DNI (kWh/m2). NaN if it isn't valid
 %       6 - Flag of the monthly DNI
-%       dataval.replaced: Array with the replaced days along the year. Columns:
+%       dataval.subst: Array with the substituted days along the year. Columns:
 %       1 - Year
 %       2 - Month
 %       3 - Origin day
-%       4 - Replaced day
+%       4 - Substituted day
 %       dataval.nonvalid_m: Array with the number of non-valid days in each
 %       month
 %
@@ -145,37 +145,40 @@ dataval.interp = {interpG_y; interpB_y};
 
 %% Monthly validation
 % In the monthly validation, a main variable must be chosen in order to lead
-% the process of nonvalid days replacement. Replacements affect all
+% the process of nonvalid days substitution. Substitutions affect all
 % variables according to the main variable. Currently, DNI is the main
 % variable in 'valida_months' function.
 
 % valida_months Function tests the validity of each month for each variable
 % on the basis of the daily validation results. A month is valid if has as
 % much as 4 non-valid days.
-[daily,monthly,replaced,nonvalid_m] = valida_months(res_daily,max_nonvalid,max_dist);
-replaced = [ones(size(replaced,1),1)*year replaced]; % Add year to replaced array
+[daily,monthly,subst,nonvalid_m] = valida_months(res_daily,max_nonvalid,max_dist);
+subst = [ones(size(subst,1),1)*year subst]; % Add year to substituted array
 
-dataval.daily = daily; % Update daily values if replacements were made
+dataval.daily = daily; % Update daily values if substitutions were made
 dataval.monthly = monthly; % Saves monthly validation results
-dataval.replaced = replaced; % Array with the replaced days in the year
+dataval.subst = subst; % Array with the substituted days in the year
 dataval.nonvalid_m = nonvalid_m; % Number of non-valid days in each month
 
 %% Update radiation series
-% Updating data in case of days replacements in valida_months
-for i = 1:size(replaced,1)
-    origin_day = replaced(i,3)+num_previous_days(replaced(i,2)); % To Julian day
-    replaced_day = replaced(i,4)+num_previous_days(replaced(i,2)); % To Julian day
+% Updating data in case of days substitutions in valida_months
+for i = 1:size(subst,1)
+    origin_day = subst(i,3)+num_previous_days(subst(i,2)); % To Julian day
+    subst_day = subst(i,4)+num_previous_days(subst(i,2)); % To Julian day
     lin_ini_orig = (origin_day-1)*24*num_obs+1;
     lin_end_orig = origin_day*24*num_obs;
-    lin_ini_repl = (replaced_day-1)*24*num_obs+1;
-    lin_end_repl = replaced_day*24*num_obs;
+    lin_ini_repl = (subst_day-1)*24*num_obs+1;
+    lin_end_repl = subst_day*24*num_obs;
     
     dataval.mqc(lin_ini_repl:lin_end_repl,1:6) = dataval.mqc(lin_ini_orig:lin_end_orig,1:6); % Date
     dataval.mqc(lin_ini_repl:lin_end_repl,7:8) = dataval.mqc(lin_ini_orig:lin_end_orig,7:8); % GHI & Flag QC GHI
     dataval.mqc(lin_ini_repl:lin_end_repl,9:10) = dataval.mqc(lin_ini_orig:lin_end_orig,9:10); % DNI & Flag QC DNI
-    % For interpolation purpose on the series generation module, since DHI
-    % wasn't include in the validation process
+    % To all the other meteorological variables have applied the
+    % substitutions
     dataval.mqc(lin_ini_repl:lin_end_repl,11:12) = dataval.mqc(lin_ini_orig:lin_end_orig,11:12); % DHI & Flag QC DHI
+    if size(dataval.mqc,2)>12
+        dataval.mqc(lin_ini_repl:lin_end_repl,13:end) = dataval.mqc(lin_ini_orig:lin_end_orig,13:end); % Other meteo
+    end
     % Astronomical data are not required to be substituted
 %     dataval.astro(lin_ini_repl:lin_end_repl,:) = dataval.astro(lin_ini_orig:lin_end_orig,:); % Update astro
 end

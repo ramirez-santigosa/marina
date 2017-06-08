@@ -17,17 +17,17 @@
 % ..\OUTPUT\3_VALIDATION
 %       One Matlab file per year: dataval i.e. 'loc00-owner_station-num-YYYY_VAL'
 %       Each file contains the structured variable 'dataval'
-%       Same as "dataqc" but adding five fields and updating 'mqc' and
-%       'astro' if some data is interpolated in the daily validation or if 
-%       some days are replaced in the monthly validation. February 29th of 
-%       leap years is trimmed in 'mqc' and 'astro' matrices. Added fields:
+%       Same as "dataqc" but adding five fields and updating 'mqc'
+%       if some data is interpolated in the daily validation or if 
+%       some days are substituted in the monthly validation. February 29th
+%       of leap years is trimmed in 'mqc' and 'astro' matrices. Added fields:
 %  (1)  dataval.interp: Saves the number of interpolated data in each day
 %       for GHI and DNI. It is a cell with two matrices.
 %  (2)  dataval.daily = Daily radiation values (Wh/m2) and the daily
 %       validation flags [# day, GHI, GHI flag, # day, DNI, DNI flag] (365X6)
 %  (3)  dataval.monthly = Monthly radiation values (kWh/m2) and the monthly
 %       validation flags [# month, GHI, GHI flag, # month, DNI, DNI flag] (12X6)
-%  (4)  dataval.replaced = Array with the replaced days along the years
+%  (4)  dataval.subst = Array with the substituted days along the years
 %  (5)  dataval.nonvalid_m = Array with the number of non-valid days in 
 %       each month
 %
@@ -40,27 +40,27 @@
 %  (5)  Sheet DNI: Summary of the monthly DNI values (kWh/m2) of each year
 %  (6)  Sheet #_NonValid: Summary of the number of non-valid days in each
 %       month and year
-%  (7)  Sheet Replaced: Summary of the replaced days pointing out the
-%       origin day and the replaced day
+%  (7)  Sheet Substituted: Summary of the substituted days pointing out the
+%       origin day and the substituted day
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-close, clearvars, %clc
-run('Configuration_BSRN_ASP.m');
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
 if ~exist(path_val,'dir')
     mkdir(path_val);
 end
 
 % Preallocation variables for Excel export
-colD = 6; res_daily_ex = zeros(365,num_years*colD);
-colM = 6; res_month_ex = zeros(12,num_years*colM);
-interpolB_ex = zeros(num_years*365,4); idxI = 1;
-replaced_ex = zeros(num_years*12*max_nonvalid,4); idxR = 1;
+colD = 6; res_daily_ex = NaN(365,num_years*colD);
+colM = 6; res_month_ex = NaN(12,num_years*colM);
+interpolB_ex = NaN(num_years*365,4); idxI = 1;
+subst_ex = NaN(num_years*12*max_nonvalid,4); idxR = 1;
 
 % Preallocation monthly validation output tables
-Table_missing = zeros(12,num_years);
-Table_GHI = zeros(12,num_years);
-Table_DNI = zeros(12,num_years);
+Table_missing = NaN(12,num_years);
+Table_GHI = NaN(12,num_years);
+Table_DNI = NaN(12,num_years);
 namef = [loc '00-' owner_station '-' num];
 
 for y = year_ini:year_end
@@ -69,10 +69,15 @@ for y = year_ini:year_end
     fprintf('Validation of %s year %s\n',name,year_str);
     
     name_out = [namef '-' year_str];
-    name_out_QC  = [name_out '_QC'];
-    name_out_VAL = [name_out '_VAL'];
-    
-    load(strcat(path_qc,'\',name_out_QC));
+    name_out_QC  = [name_out '_QC']; name_out_VAL = [name_out '_VAL'];
+    name_in = strcat(path_qc,'\',name_out_QC,'.mat');
+    if exist(name_in,'file')==2
+        load(name_in); % Load of the standard data structure
+    else
+        warning('The file %s does not exist.\n The year %d will be skipped in the QC process.',...
+            name_in,y);
+        continue
+    end
     
     dataval = validation(dataqc,level,max_nonvalid,max_dist); % Function Daily and Monthly validation
     save(strcat(path_val,'\',name_out_VAL),'dataval'); % Save structure
@@ -85,9 +90,9 @@ for y = year_ini:year_end
     n_inter = size(dataval.interp{2},1);
     interpolB_ex(idxI:idxI+n_inter-1,:) = dataval.interp{2};
     idxI = idxI+n_inter;
-    % Replaced days in each year
-    n_sub = size(dataval.replaced,1);
-    replaced_ex(idxR:idxR+n_sub-1,:) = dataval.replaced;
+    % Substituted days in each year
+    n_sub = size(dataval.subst,1);
+    subst_ex(idxR:idxR+n_sub-1,:) = dataval.subst;
     idxR = idxR+n_sub;
     % Non-valid days, GHI & DNI validation results
     Table_missing(:,idx+1) = dataval.nonvalid_m(:,1);
@@ -96,7 +101,7 @@ for y = year_ini:year_end
 end
 
 interpolB_ex(idxI:end,:) = []; % Shrink
-replaced_ex(idxR:end,:) = []; % Shrink
+subst_ex(idxR:end,:) = []; % Shrink
 
 %% Headers for Excel Validation Report
 
@@ -104,6 +109,7 @@ replaced_ex(idxR:end,:) = []; % Shrink
 headerD = cell(1,num_years*colD);
 headerM = cell(1,num_years*colM);
 headerY = year_ini:year_end;
+headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Aug';'Sep';'Oct';'Nov';'Dic'}; % Headers months
 
 for y = year_ini:year_end
     
@@ -128,16 +134,26 @@ for y = year_ini:year_end
     
 end
 
+headerD = ['Month', headerD];
+% Month for daily results
+year_m = zeros(365,1); k = 1; % No leap years
+for month = 1:12
+    for d = 1:num_days_m(month)
+        year_m(k) = month;
+        k = k+1;
+    end
+end
+
 hInterpB = {'Year','Month','Day','# data interpolated'}; % Headers interpolated days
-hReplaced = {'Year','Month','Origin day','Replaced day'}; % Headers replaced days
+hSubst = {'Year','Month','Origin day','Substituted day'}; % Headers substituted days
 
 %% Writing Validation Report in Excel
 
 if isempty(interpolB_ex)
     interpolB_ex = '####';
 end
-if isempty(replaced_ex)
-    replaced_ex = '####';
+if isempty(subst_ex)
+    subst_ex = '####';
 end
 
 file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx');
@@ -145,24 +161,27 @@ file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx');
 % Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
 
-fprintf('Writing Excel file %s \n',namef);
+fprintf('Writing Excel file %s \n',file_xls);
 
 % INTERPOLATED DAYS PER MONTH AND YEAR ------------------------------------
 % One cell per sheet (just one call of the xlswrite function per sheet)
 xlswrite(file_xls,[hInterpB; num2cell(interpolB_ex)],'Interpol','A1'); % Write the headers & results
 
 % DAILY VALIDATION RESULTS ------------------------------------------------
-xlswrite(file_xls,[headerD; num2cell(round(res_daily_ex))],'Val_Day','A1'); % Write the headers & results
+xlswrite(file_xls,[headerD; num2cell([year_m round(res_daily_ex)])],'Val_Day','A1'); % Write the headers & results
 
 % MONTHLY VALIDATION RESULTS ----------------------------------------------
 xlswrite(file_xls,[headerM; num2cell(round(res_month_ex))],'Val_Month','A1'); % Write the headers & results
 
 % MONTHLY GHI & DNI RESULTS AFTER VALIDATION ------------------------------
-xlswrite(file_xls,[headerY; round(Table_GHI)],'GHI','A1'); % Write the headers & results
+ghi_ex = [['Month' num2cell(headerY)]; [headers_m, num2cell(round(Table_GHI))]];
+xlswrite(file_xls,ghi_ex,'GHI','A1'); % Write the headers & results
 
-xlswrite(file_xls,[headerY; round(Table_DNI)],'DNI','A1'); % Write the headers & results
+dni_ex = [['Month' num2cell(headerY)]; [headers_m, num2cell(round(Table_DNI))]];
+xlswrite(file_xls,dni_ex,'DNI','A1'); % Write the headers & results
 
-% NUMBER OF NON-VALID AND REPLACED DAYS PER MONTH AND YEAR ----------------
-xlswrite(file_xls,[headerY; round(Table_missing)],'#_NonValid','A1'); % Write the headers & results
+% NUMBER OF NON-VALID AND SUBSTITUTED DAYS PER MONTH AND YEAR ----------------
+nov_ex = [['Month' num2cell(headerY)]; [headers_m, num2cell(round(Table_missing))]];
+xlswrite(file_xls,nov_ex,'#_NonValid','A1'); % Write the headers & results
 
-xlswrite(file_xls,[hReplaced; num2cell(replaced_ex)],'Replaced','A1'); % Write the headers & results
+xlswrite(file_xls,[hSubst; num2cell(subst_ex)],'Substituted','A1'); % Write the headers & results

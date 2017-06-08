@@ -192,7 +192,7 @@ end
 
 years = year_ini:year_end; % Years analyzed
 % Pre-allocation
-headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Ago';'Sep';'Oct';'Nov';'Dic'}; % Headers months
+headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Aug';'Sep';'Oct';'Nov';'Dic'}; % Headers months
 value = zeros(y,12); % Sorted summed absolute difference per month
 sorted_y = zeros(y,12); % Sorted index
 position_candidates = zeros(1,num_cand); % Sorted candidates years
