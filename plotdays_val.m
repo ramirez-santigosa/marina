@@ -1,5 +1,5 @@
 function [ dataDaysVal ] = plotdays_val( cfgFile, iniDay, finalDay, variables )
-%PLOTDAYS Extract and plot the data after quality control process between
+%PLOTDAYS_VAL Extract and plot the data after quality control process between
 %two specific days of the same year
 %   INPUT:
 %   iniDay: Initial day for plotting.

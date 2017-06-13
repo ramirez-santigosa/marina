@@ -52,12 +52,12 @@ max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 max_dist = 5; % Maximum distance in the days used for the substitution
 
 %% 4 - Candidates
-methS = [true true false false false]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
+methS = [1 1 0 1 1]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
 num_cand = 5; % Number of candidates. Must be <= than the number of years
 if num_cand > num_years
     error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
 end
-nbins = 10; % Number of bins for cumulative distribution function
+nbins = 10; % Number of bins for cumulative distribution functions
 
 %% 5 - Series Generation
 % max_dist = 5; % Maximum distance in the days used for the substitution (usually already defined in validation)
