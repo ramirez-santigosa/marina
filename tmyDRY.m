@@ -154,18 +154,34 @@ xlswrite(fileOut,DRY_ex,'outputDRY','A1');
 
 %% Figures
 % Long Term Daily Mean & Smooth -------------------------------------------
-fileName = [fileOut(1:end-8) 'LTDM-DRY'];
+fileName = [fileOut(1:end-5) '-LTDM'];
 figure;
 ax1 = subplot(2,1,1);
 plot(LTDM_DNI)
 title(ax1,'Long-term daily mean (LTDM)')
-xlim([1 365]); ylabel(ax1,'DNI (Wh/m2)')
+xlim([1 365]); ylabel(ax1,'DNI (Wh/m^2)')
 
 ax2 = subplot(2,1,2);
 plot(smooth_LTDM_DNI);
-title(ax2,'Smoothed LTDM')
-xlim([1 365]); ylabel(ax2,'DNI (Wh/m2)')
+title(ax2,'Smoothed LTDM (\mu_x)')
+xlim([1 365]); ylabel(ax2,'DNI (Wh/m^2)')
 xlabel(ax2,'Day')
+print('-djpeg','-opengl','-r350',fileName)
+
+% Y -----------------------------------------------------------------------
+Yc = reshape(Y,[],1);
+period = (datetime([year_end-9 1 1 0 0 0]):day(1):datetime([year_end 12 31 23 59 0]))'; % The last 10 years are selected because has less missing records
+for i = 1:length(period)
+    temp = datevec(period(i));
+    if temp(2)==2 && temp(3)==29
+        period(i)=NaT;
+    end
+end
+period(isnat(period))=[];
+start = length(Yc)-10*365+1;
+figure; plot(period,Yc(start:end))
+title('Daily DNI residuals (Y)')
+ylabel('Y (Wh/m^2)'); xlabel('Years'); fileName = [fileOut(1:end-5) '-Y'];
 print('-djpeg','-opengl','-r350',fileName)
 
 end

@@ -170,17 +170,17 @@ dZym = (1-alpha-beta)*dksZym+alpha*davZym+beta*dsdZym;
 %% Selection TMM
 dmax_ym = max(dXym,dZym); % Assign the maximum (worse) to each month
 [dminmax_selFR, i_selFR] = min(dmax_ym,[],2); % Selected the the month with the best (minimum) distance
-CDFX_selFR_cumpct = zeros(12,2+nbins);
-CDFZ_selFR_cumpct = zeros(12,2+nbins);
+% CDFX_selFR_cumpct = zeros(12,2+nbins);
+% CDFZ_selFR_cumpct = zeros(12,2+nbins);
 
 for m = 1:12 % Get selected year/month and its value
     Year_selFR(m) = years(i_selFR(m));
     Val_selFR(m) = DNI_m(m,i_selFR(m));
-    posTMM = CDFXym_cumpct(:,1)==Year_selFR(m) & CDFXym_cumpct(:,2)==m;
-    CDFX_selFR_cumpct(m,1) = Year_selFR(m); CDFZ_selFR_cumpct(m,1) = Year_selFR(m);
-    CDFX_selFR_cumpct(m,2) = m; CDFZ_selFR_cumpct(m,2) = m;
-    CDFX_selFR_cumpct(m,3:end) = CDFXym_cumpct(posTMM,3:end); % TMM selected
-    CDFX_selFR_cumpct(m,3:end) = CDFZym_cumpct(posTMM,3:end); % TMM selected
+%     posTMM = CDFXym_cumpct(:,1)==Year_selFR(m) & CDFXym_cumpct(:,2)==m;
+%     CDFX_selFR_cumpct(m,1) = Year_selFR(m); CDFZ_selFR_cumpct(m,1) = Year_selFR(m);
+%     CDFX_selFR_cumpct(m,2) = m; CDFZ_selFR_cumpct(m,2) = m;
+%     CDFX_selFR_cumpct(m,3:end) = CDFXym_cumpct(posTMM,3:end); % TMM selected
+%     CDFX_selFR_cumpct(m,3:end) = CDFZym_cumpct(posTMM,3:end); % TMM selected
 end
 
 %% FR (Festa-Ratto method) TMY METHODOLOGY output report
@@ -238,17 +238,17 @@ for i = 1:length(period)
 end
 period(isnat(period))=[];
 start = length(data_day_DNI(:,4))-10*365+1;
-fileName = [fileOut(1:end-8) 'X-FR'];
+fileName = [fileOut(1:end-5) '-X'];
 
 figure;
 ax1 = subplot(2,2,1);
 plot(period,data_day_DNI(start:end,4))
-title(ax1,'Raw values')
-ylabel(ax1,'Daily DNI (Wh/m2)')
+title(ax1,'Raw values (x)')
+ylabel(ax1,'Daily DNI (Wh/m^2)')
 
 ax2 = subplot(2,2,3);
 plot(period,Xc(start:end))
-title(ax2,'Standarized daily DNI residuals')
+title(ax2,'Standardized daily DNI residuals (X)')
 ylabel(ax2,'X'); xlabel(ax2,'Years')
 
 x = 1:365;
@@ -256,38 +256,38 @@ ax3 = subplot(2,2,2);
 plot(x,LTDM_DNI,x,LTDstd_DNI)
 title(ax3,'Long-term daily mean and std. deviation')
 legend({'Mean', 'Std. dev.'},'Location','NorthEast');
-xlim([1 x(end)]); ylabel(ax3,'DNI (Wh/m2)')
+xlim([1 x(end)]); ylabel(ax3,'DNI (Wh/m^2)')
 
 ax4 = subplot(2,2,4);
 plot(x,smooth_LTDM_DNI,x,smooth_LTDstd_DNI);
-title(ax4,'Smoothed long-term')
+title(ax4,'Smoothed long-term (\mu_x and \sigma_x)')
 legend({'Mean', 'Std. dev.'},'Location','NorthEast');
-xlim([1 365]); ylabel(ax4,'DNI (Wh/m2)')
+xlim([1 365]); ylabel(ax4,'DNI (Wh/m^2)')
 xlabel(ax4,'Days')
 print('-djpeg','-opengl','-r350',fileName)
 
 % Z -----------------------------------------------------------------------
 figure; plot(period,Zc(start:end))
-title('Standarized z residuals')
-ylabel('Z'); xlabel('Years'); fileName = [fileOut(1:end-8) 'Z-FR'];
+title('Standardized z residuals (Z)')
+ylabel('Z'); xlabel('Years'); fileName = [fileOut(1:end-5) '-Z'];
 print('-djpeg','-opengl','-r350',fileName)
 
 % Long Term CDF -----------------------------------------------------------
 figCDFLTX = CDFLTX_cumpct(:,3:end);
-titleFig = 'Long-term CDF X'; fileName = [fileOut(1:end-8) 'CDFLTX-FR'];
+titleFig = 'Long-term CDF X'; fileName = [fileOut(1:end-5) '-CDFLTX'];
 plotCDF3D(figCDFLTX,titleFig,fileName)
 
 figCDFLTZ = CDFLTZ_cumpct(:,3:end);
-titleFig = 'Long-term CDF Z'; fileName = [fileOut(1:end-8) 'CDFLTZ-FR'];
+titleFig = 'Long-term CDF Z'; fileName = [fileOut(1:end-5) '-CDFLTZ'];
 plotCDF3D(figCDFLTZ,titleFig,fileName)
 
 % CDF TMY selected --------------------------------------------------------
-figCDFXFR = CDFX_selFR_cumpct(:,3:end);
-titleFig = 'CDF X FR selected'; fileName = [fileOut(1:end-8) 'CDFXTMM-FR'];
-plotCDF3D(figCDFXFR,titleFig,fileName)
-
-figCDFZFR = CDFX_selFR_cumpct(:,3:end);
-titleFig = 'CDF Z FR selected'; fileName = [fileOut(1:end-8) 'CDFZTMM-FR'];
-plotCDF3D(figCDFZFR,titleFig,fileName)
+% figCDFXFR = CDFX_selFR_cumpct(:,3:end);
+% titleFig = 'CDF X FR selected'; fileName = [fileOut(1:end-5) '-CDFXTMM'];
+% plotCDF3D(figCDFXFR,titleFig,fileName)
+% 
+% figCDFZFR = CDFX_selFR_cumpct(:,3:end);
+% titleFig = 'CDF Z FR selected'; fileName = [fileOut(1:end-5) '-CDFZTMM'];
+% plotCDF3D(figCDFZFR,titleFig,fileName)
 
 end

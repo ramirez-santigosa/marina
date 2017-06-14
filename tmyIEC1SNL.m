@@ -92,12 +92,12 @@ xlswrite(fileOut,SNL_ex,'outputSNL','A1');
 %% Figures
 % Long Term CDF -----------------------------------------------------------
 figCDFLT = CDFLT_cumpct(:,3:end);
-titleFig = 'Long-term CDF'; fileName = [fileOut(1:end-8) 'CDFLT-SNL'];
+titleFig = 'Long-term CDF'; fileName = [fileOut(1:end-5) '-CDFLT'];
 plotCDF3D(figCDFLT,titleFig,fileName)
 
 % CDF TMY selected --------------------------------------------------------
 figCDFSNL = CDF_selSNL_cumpct(:,3:end);
-titleFig = 'CDF SNL selected'; fileName = [fileOut(1:end-8) 'CDFTMM-SNL'];
+titleFig = 'CDF SNL selected'; fileName = [fileOut(1:end-5) '-CDFTMM'];
 plotCDF3D(figCDFSNL,titleFig,fileName)
 
 end

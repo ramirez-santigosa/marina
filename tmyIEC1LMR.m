@@ -97,12 +97,12 @@ xlswrite(fileOut,LMR_ex,'outputLMR','A1');
 %% Figures
 % Long Term CDF -----------------------------------------------------------
 figCDFLT = CDFLT_cumpct(:,3:end);
-titleFig = 'Long-term CDF'; fileName = [fileOut(1:end-8) 'CDFLT-LMR'];
+titleFig = 'Long-term CDF'; fileName = [fileOut(1:end-5) '-CDFLT'];
 plotCDF3D(figCDFLT,titleFig,fileName)
 
 % CDF TMY selected --------------------------------------------------------
 figCDFLMR = CDF_selLMR_cumpct(:,3:end);
-titleFig = 'CDF LMR selected'; fileName = [fileOut(1:end-8) 'CDFTMM-LMR'];
+titleFig = 'CDF LMR selected'; fileName = [fileOut(1:end-5) '-CDFTMM'];
 plotCDF3D(figCDFLMR,titleFig,fileName)
 
 end
