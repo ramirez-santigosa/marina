@@ -1,4 +1,4 @@
-function [ ST ] = sam_write(filename_out,sam_out,num_obs,options_sam)
+function [ ST ] = sam_write(filename_out,sam_out,options_sam)
 %SAM_WRITE Writes a CSV file formatted to be read by the software System
 %Advisory Model (SAM). More info:
 %https://sam.nrel.gov/weather

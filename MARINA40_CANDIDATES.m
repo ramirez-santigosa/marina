@@ -122,7 +122,7 @@ if methS(3)==1 % IEC2
     outIEC2 = tmyIEC2(DNI_m(:,10:15),fOutIEC2); % Dummy function TO DO !!!
     disp('IEC2 methodology executed. RMV determined.');
     
-    i_meth = i_meth+1; outYears(:,i_meth) = zeros(12,1);
+    i_meth = i_meth+1; outYears(:,i_meth) = zeros(12,1); % Which year assign in this case?
     outRMV(:,i_meth) = outIEC2(:,1);
     close all
 end

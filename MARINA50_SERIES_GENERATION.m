@@ -4,41 +4,42 @@
 %
 % Developed in the context of ASTRI
 %
-% MODULE 5: TYPICAL YEAR SERIES GENERATION
+% MODULE 5: ANNUAL SOLAR RADIATION SERIES GENERATION
 % Version of July, 2015. L. Ramírez; At CSIRO.
-% Update F. Mendoza (April 2017) at CIEMAT.
+% Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
 % ..\OUTPUT\4_CASES
-%       'loc00-owner_station-num'-INPUT-GENERATION.xlsx
+%       'loc00-owner_station-num'-IN_SERIESGEN.xlsx
 % ..\OUTPUT\3_VALIDATION
 %       'dataval' structure of the selected years (i.e. loc00-owner_station-num-YYYY_VAL)
 %
 % OUTPUT:
 % ..\OUTPUT\5_TMY\NAME_SERIES
-%  (1) Excel report 'loc00-owner_station-num'-OUTPUT-GENERATION Sheets:
+%  (1) Excel report 'loc00-owner_station-num'_SERIES Sheets:
 %       - 'name_series'_D: Definitive daily radiation series of the typical year
 %       - 'name_series'_M: Definitive monthly radiation series of the typical year
 %  (2) Plain text formats
 %  (2a) SAM CSV format 'SAM_...'.csv
 %  (2b) IEC 62862-1-3 format 'ASR_...'.txt
 %  (3) Figures: Plot of the definitive series
-%  (4) output-series.mat: Saves the definitive series, daily and monthly of
+%  (4) out_series.mat: Saves the definitive series, daily and monthly of
 %      the typical year
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-close, clearvars, %clc
-run('Configuration_BSRN_ASP.m');
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
 if ~exist(path_cases,'dir')
-    mkdir(path_tmy);
+    mkdir(path_asr);
 end
 
 namef = [loc '00-' owner_station '-' num]; % MATLAB files with the results of the validation process
 filename_val = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Validation Excel report
-filename_input = strcat(path_cases,'\',namef,'-INPUT-GENERATION.xlsx'); % Input Generation
+filename_input = strcat(path_cases,'\',namef,'-IN_SERIESGEN.xlsx'); % Input Generation
 num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
-if iec_format % Create a functional date vector in ISO 8601 format if it is typical year file
+
+if iec_format % Create a functional date vector in ISO 8601 format if IEC 62862-1-3 format is required
     time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
         datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-3)
     time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
@@ -49,11 +50,11 @@ end
 
 switch variable{1}
     case 'GHI'
-        col_main = 7; % Each year, in Validation data structure
-        cols_main = 1:3; % Each year, in Excel file (Validation Report)
+        col_main_m = 7; % Each year, in Validation data structure
+        cols_main_m = 1:3; % Each year, in Excel file (Validation Report)
     case 'DNI'
-        col_main = 9; % Each year, in Validation data structure
-        cols_main = 4:6; % Each year, in Excel file (Validation Report)
+        col_main_m = 9; % Each year, in Validation data structure
+        cols_main_m = 4:6; % Each year, in Excel file (Validation Report)
     otherwise
         warning(strcat('The main variable is not identificable in Excel file ',...
             filename_input,' within the sheet VARIABLE.'))
@@ -69,14 +70,15 @@ n_series = size(series_in,2); % Number of columns/series to generate
 %% Reading data of the validation process results
 % Read daily validation process results
 [days_y_val, text_val] = xlsread(filename_val,'Val_day');
-year_ini = str2double(text_val{1,1}(1:4)); year_end = str2double(text_val{1,end}(1:4));
+days_y_val(:,1) = []; % Delete month column
+year_ini = str2double(text_val{1,2}(1:4)); year_end = str2double(text_val{1,end}(1:4));
 years_val = year_ini:year_end; % Years included in the validation process
 % Read monthly validation process results
 month_y_val = xlsread(filename_val,'Val_Month');
 
 %% Loops through Series and Months
 % Pre-allocation output vars
-colS = 12; SERIES_out = NaN(365*24*num_obs,colS,n_series); % Array with the definitive series
+colS = 16; SERIES_out = NaN(365*24*num_obs,colS,n_series); % Array with the definitive series. colS maximum number of variables including other meteo
 colD = 6; DAYS_out = NaN(365,colD,n_series); % Array with the definitive daily series
 colM = 6; MONTHS_out = NaN(12,colM,n_series); % Array with the definitive monthly series
 cosz_out = NaN(365*24*num_obs,1); % Save cosine of zenith angle in case of interpolation
@@ -84,7 +86,8 @@ SERIES_out_int = SERIES_out; % Interpolated series (for variables not included i
 
 for i=1:n_series
     name_series = text_series_in{1,i+1}; % Creation path for results
-    path_series = strcat(path_tmy,'\',name_series);
+    name_series(name_series=='/') = '-'; % Replace '/' by '-' for path creation
+    path_series = strcat(path_asr,'\',name_series);
     if ~exist(path_series,'dir')
         mkdir(path_series);
     end
@@ -94,8 +97,9 @@ for i=1:n_series
         mkdir(path_fig);
     end
     
-    fprintf('Generating the %s series for simulation.\n',name_series);
+    fprintf('\nGenerating the %s series for simulation.\n',name_series);
     MV = zeros(12,1); % To save monthly value
+    addVars = 4; otherMeteo = cell(12,addVars); % Save which additional meteorological variables are included with the data
     
     for m = 1:12 % Extraction of the series, daiily and monthly values
         year = series_in(m,i); % Get the number of the year to read the corresponding data
@@ -128,23 +132,23 @@ for i=1:n_series
         
         % Verification of values coherence --------------------------------
         % Check if all data is a valid number
-        i_data = ~isnan(series_m(:,col_main)) & series_m(:,col_main)~=-999;
+        i_data = ~isnan(series_m(:,col_main_m)) & series_m(:,col_main_m)~=-999;
         if sum(i_data)~=size(series_m,1)
             warning('Some non-identifiable data are in the final series of the main variable.\n Please verify (NaN or -999) in the year %d and month %d.',...
                 year,m)
         end
         
         % Monthly value from the monthly validation Excel report
-        MV(m) = month_val(1,cols_main(2));
+        MV(m) = month_val(1,cols_main_m(2));
         % Monthly value is equal to the sum of the series values after validation
-        series_MV = round(sum(series_m(i_data,col_main))/(num_obs*1000)); % kWh/m2
+        series_MV = round(sum(series_m(i_data,col_main_m))/(num_obs*1000)); % kWh/m2
         if series_MV~=MV(m)
             warning('The sum up of the series radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
         end
         
         % Monthly value is equal to the sum of the series daily values
-        daily_MV = round(sum(days_m_val(:,cols_main(2)))/1000); % kWh/m2
+        daily_MV = round(sum(days_m_val(:,cols_main_m(2)))/1000); % kWh/m2
         if daily_MV~=MV(m)
             warning('The sum up of the daily radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
                 year,m)
@@ -155,7 +159,7 @@ for i=1:n_series
         % Equation (6) Standard IEC 62862-1-2
         limit = (ARV(i)/12)*0.02; % Limit of the difference between monthly value and RMV
         if abs(RMV(m,i)-MV(m)) >= limit
-            days_m = [days_m_val(:,1) days_m_val(:,cols_main(2))/1000]; % # of day and daily irradiance in kWh/m2
+            days_m = [days_m_val(:,1) days_m_val(:,cols_main_m(2))/1000]; % # of day and daily irradiance in kWh/m2
             if MV(m) <= RMV(m,i) % Monthly value must increment
                 [resultSubs,substituted,used,counter,ctrl]...
                     = subs_days_up(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
@@ -195,15 +199,21 @@ for i=1:n_series
         end
         
         % Output Series ---------------------------------------------------
-        SERIES_out(row_m_obs_ini:row_m_obs_end,:,i) = series_m;
+        SERIES_out(row_m_obs_ini:row_m_obs_end,1:size(series_m,2),i) = series_m;
         DAYS_out(row_m_d_ini:row_m_d_end,:,i) = days_m_val;
         MONTHS_out(m,:,i) = month_val;
         cosz_out(row_m_obs_ini:row_m_obs_end) = cosz_m;
+        
+        % Save which additional meteorological variables are included with the data
+        addMeteo = length(dataval.header)-9;
+        if addMeteo~=0
+            otherMeteo(m,1:addMeteo) = dataval.header(10:end);
+        end
     end
     
     %% Calculation or Interpolation of the other variables
     % Variables not inclued in the validation process are interpolated
-    [SERIES_out_int(:,:,i),num_cases] = interpolating_holes(SERIES_out(:,:,i),cosz_out,num_obs); % Function
+    [SERIES_out_int(:,1:12,i),num_cases] = interpolating_holes(SERIES_out(:,1:12,i),cosz_out,num_obs); % Function
     fprintf('Final interpolation results of the %s series\n',name_series);
     fprintf('# of GHI data calculated from the other variables: %d\n',num_cases(1));
     fprintf('# of DNI data calculated from the other variables: %d\n',num_cases(2));
@@ -212,9 +222,10 @@ for i=1:n_series
     fprintf('# of DNI data interpolated and DHI calculated: %d\n',num_cases(5));
     fprintf('# of GHI data interpolated and DHI calculated: %d\n',num_cases(6));
     fprintf('# of GHI, DNI data interpolated and DHI calculated: %d\n',num_cases(7));
+    SERIES_out_int(13:end) = SERIES_out(13:end); % Add other meteo vars
         
     %% Write down EXCEL series report
-    filename_out = strcat(path_series,'\',namef,'-OUTPUT-GENERATION.xlsx'); % Output Generation
+    filename_out = strcat(path_series,'\',namef,'_',name_series,'.xlsx'); % Output Generation
     fprintf('Generating EXCEL report for %s series\n',name_series);
     
     % Switch off new excel sheet warning
@@ -256,6 +267,24 @@ for i=1:n_series
     month_ex = num2cell([series_in(:,i) MONTHS_out(:,:,i) RMV(:,i) MV subs_ex]);
     xlswrite(filename_out,[headerM; month_ex],strcat(name_series,'_M'),'A1');
 
+    %% Add other meteo
+    % Additional data elements from the weather file required by SAM to
+    % execute a CSP plant simulation. See SAM Help.
+    addMeteo = {'t_air [degC]','rh [%]','bp [hPa]','ws [m/s]'};
+    if cellfun(@isempty,otherMeteo)
+        fprintf('There are not the additional meteorological data required for simulation of the %s series.\n',...
+            name_series);
+    else
+        available = false(12,addVars);
+        for month = 1:12
+            for v = 1:4
+                avl = strcmp(otherMeteo(month,v),addMeteo);
+                available(month,:) = available(month,:)|avl;
+            end
+            
+        end
+    end
+    
     %% Write down txt files
     % SAM CSV format ------------------------------------------------------
     if sam_format
@@ -277,7 +306,7 @@ for i=1:n_series
         options_sam.lon = dataval.geodata.lon;
         options_sam.alt = dataval.geodata.alt;
         fprintf('Generating SAM CSV format file for %s series\n',name_series);
-        sam_write(filename_out,sam_out,num_obs,options_sam); % Function
+        sam_write(filename_out,sam_out,options_sam); % Function
     end
     
     % IEC 62862-1-3 format ------------------------------------------------
@@ -365,5 +394,5 @@ for i=1:n_series
     
 end
 
-save(strcat(path_tmy,'\','output_series'),'SERIES_out_int','DAYS_out',...
+save(strcat(path_asr,'\','out_series'),'SERIES_out_int','DAYS_out',...
     'MONTHS_out','finalSubs'); % Save results
