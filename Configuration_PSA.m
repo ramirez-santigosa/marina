@@ -124,5 +124,5 @@ path_out = '..\OUT_PSA';
 path_format = [path_out '\1_FORMAT']; % Output standard data structure
 path_qc = [path_out '\2_QC']; % Output Quality Control
 path_val = [path_out '\3_VALIDATION']; % Output validation and gap filling
-path_cases = [path_out '\4_TMYMETH']; % Output selected TMY methodology
+path_meth = [path_out '\4_TMYMETH']; % Output selected TMY methodology
 path_asr = [path_out '\5_ASR']; % Output annual solar radiation series

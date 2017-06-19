@@ -23,8 +23,8 @@ MARINA20_QC
 %% Module 3: Validation and Gap Filling
 MARINA30_VALIDATION
 
-%% Module 4: Candidates selection
-MARINA40_CANDIDATES
+%% Module 4: Typical meteorological months selection (TMY methodologies)
+MARINA40_TMYMETH
 
 %% Module 5: Annual series generation
 MARINA50_SERIES_GENERATION

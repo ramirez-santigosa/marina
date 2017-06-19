@@ -4,7 +4,8 @@
 %
 % Developed in the context of ASTRI
 %
-% MODULE 4: CANDIDATES FOR THE TMY GENERATION BASED IN CDF DISTANCES
+% MODULE 4: TYPICAL METEOROLOGICAL MONTHS SELECTION BASED IN SEVERAL TMY
+% METHODOLOGIES
 % Version of July, 2015. L. Ramírez; At CSIRO.
 % Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -28,8 +29,8 @@
 close, clearvars -except cfgFile, %clc
 run(cfgFile); % Run configuration file
 
-if ~exist(path_cases,'dir')
-    mkdir(path_cases);
+if ~exist(path_meth,'dir')
+    mkdir(path_meth);
 end
 
 namef = [loc '00-' owner_station '-' num];
@@ -38,7 +39,7 @@ file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Name input file after va
 % Input for Series Generation (Summary of the methodologies outputs)
 outYears = zeros(12,sum(methS)); %[outSNL(:,1), outLMR(:,1) outIEC2(:,1) outDRY(:,1) outFR(:,1)];
 outRMV = zeros(12,sum(methS)); i_meth = 0; %[outSNL(:,2), outLMR(:,2) outIEC2(:,1) outDRY(:,1) outFR(:,1)];
-fInputGen = strcat(path_cases,'\',namef,'-IN_SERIESGEN.xlsx');
+fInputGen = strcat(path_meth,'\',namef,'-IN_SERIESGEN.xlsx');
 
 % Switch off new excel sheet warning
 warning off MATLAB:xlswrite:AddSheet
@@ -86,7 +87,7 @@ if methS(1)==1 % IEC1-SNL
     [CDFLT_num, CDFLT_cumpct, LTMM, CDFym_num, CDFym_cumpct, FS_DNI, candidates] = ...
         FS_statistic(data_day_DNI, nbins, DNI_m, DNI_mf, GHI_mf, num_cand);
     
-    fOutIEC1SNL = strcat(path_cases,'\',namef,'-IEC1-SNL.xlsx'); % Output file Typical Meteorological Months (TMM) IEC1/SNL
+    fOutIEC1SNL = strcat(path_meth,'\',namef,'-IEC1-SNL.xlsx'); % Output file Typical Meteorological Months (TMM) IEC1/SNL
     % IEC1/SNL Selection TMM methodology and report
     outSNL = ...
         tmyIEC1SNL(candidates, LTMM, CDFLT_num, CDFLT_cumpct, CDFym_num, CDFym_cumpct, fOutIEC1SNL);
@@ -104,7 +105,7 @@ if methS(2)==1 % IEC1-LMR
             FS_statistic(data_day_DNI, nbins, DNI_m, DNI_mf, GHI_mf, num_cand);
     end
     
-    fOutIEC1LMR = strcat(path_cases,'\',namef,'-IEC1-LMR.xlsx'); % Output file TMM IEC1/LMR
+    fOutIEC1LMR = strcat(path_meth,'\',namef,'-IEC1-LMR.xlsx'); % Output file TMM IEC1/LMR
     % IEC1/LMR Selection TMM methodology and report
     outLMR = ...
         tmyIEC1LMR(candidates, file_xls, CDFLT_num, CDFLT_cumpct, CDFym_num, CDFym_cumpct, fOutIEC1LMR);
@@ -117,7 +118,7 @@ end
 %% IEC2
 if methS(3)==1 % IEC2
     
-    fOutIEC2 = strcat(path_cases,'\',namef,'-IEC2.xlsx'); % Output file TMM IEC2
+    fOutIEC2 = strcat(path_meth,'\',namef,'-IEC2.xlsx'); % Output file TMM IEC2
     % IEC2 RMV calculation and report
     outIEC2 = tmyIEC2(DNI_m(:,10:15),fOutIEC2); % Dummy function TO DO !!!
     disp('IEC2 methodology executed. RMV determined.');
@@ -129,7 +130,7 @@ end
 %% Danish method (DRY)
 if methS(4)==1 % DRY
     
-    fOutDRY = strcat(path_cases,'\',namef,'-DRY.xlsx'); % Output file TMM DRY
+    fOutDRY = strcat(path_meth,'\',namef,'-DRY.xlsx'); % Output file TMM DRY
     % DRY Selection TMM methodology and report
     outDRY = tmyDRY(data_day_DNI, data_day_GHI, DNI_m, DNI_mf, fOutDRY);
     disp('DRY methodology executed. TMM selected.');
@@ -141,7 +142,7 @@ end
 %% Festa-Ratto (F-R)
 if methS(5)==1 % F-R
     
-    fOutFR = strcat(path_cases,'\',namef,'-FR.xlsx'); % Output file TMM F-R
+    fOutFR = strcat(path_meth,'\',namef,'-FR.xlsx'); % Output file TMM F-R
     % F-R Selection TMM methodology and report
     outFR = tmyFR(data_day_DNI, DNI_m, DNI_mf, nbins, fOutFR);
     disp('F-R methodology executed. TMM selected.');
