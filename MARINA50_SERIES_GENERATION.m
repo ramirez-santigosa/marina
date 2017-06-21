@@ -190,11 +190,11 @@ for i=1:n_series
                     lin_ini_subs = (subs_days(k)-1)*24*num_obs+1;
                     lin_end_subs = subs_days(k)*24*num_obs;
                     
-                    series_m(lin_ini_subs:lin_end_subs,1:12) = series_m(lin_ini_orig:lin_end_orig,1:12); % Update series of the month
+                    series_m(lin_ini_subs:lin_end_subs,1:end) = series_m(lin_ini_orig:lin_end_orig,1:end); % Update series of the month
                     days_m_val(subs_days(k),:) = days_m_val(origin_days(k),:); % Update daily series of the month
                 end
             end
-            month_val(1,[2,5]) = round([sum(days_m_val(:,2)) sum(days_m_val(:,5))]/1000); % Update month irradiance values
+            month_val(1,[2,5]) = round([sum(days_m_val(:,2)) sum(days_m_val(:,5))]/1000,2); % Update month irradiance values
             month_val(1,[3,6]) = 2; % Update monthly validation flags !!! 2?
         end
         

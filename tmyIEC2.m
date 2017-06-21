@@ -43,11 +43,14 @@ stdRMV = sqrt(sum(PSE,2));
 
 outIEC2 = [zeros(12,1) RMV stdRMV];
 
-outIEC2(:,2) = [85.52 102.2 149.53 179.52 211.92 231.1 239.53 210.04 159.47...
-    122.01 86.27 77.92]'; % Example. Erase later.
+% outIEC2(:,2) = [85.52 102.2 149.53 179.52 211.92 231.1 239.53 210.04 159.47...
+%     122.01 86.27 77.92]'; % Example. Erase later.
+outIEC2(:,2) = [238.2 203.1 207.5 169.1 139.5 126.2 134.2 163.5 192.5 213.2...
+    223.7 238.5]'; % Example. Erase later.
 
-outIEC2(:,3) = [7.97 8.71 11.56 14.62 14.41 7.52 9.49 15.04 7.85 7.06 6.65...
-    6.23]'; % Example. Erase later.
+% outIEC2(:,3) = [7.97 8.71 11.56 14.62 14.41 7.52 9.49 15.04 7.85 7.06 6.65...
+%     6.23]'; % Example. Erase later.
+outIEC2(:,3) = [8.9 31.2 15.9 1.8 0.6 4.3 19.2 9.8 3.1 17.5 6.5 20.6]'; % Example. Erase later.
 
 diff = abs(IRR_m - outIEC2(:,2)); % Difference between monthly irradiance value and RMV
 % [~, i_selIEC2] = min(diff,[],2); % Selected year for each month (closest month to RMV)
