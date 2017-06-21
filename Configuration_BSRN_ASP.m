@@ -51,7 +51,7 @@ level = 4; % Level for validation. Defines since which flag value a day is valid
 max_nonvalid = 4; % Maximum number of allowed non-valid days in a month
 max_dist = 5; % Maximum distance in the days used for the substitution
 
-%% 4 - Candidates
+%% 4 - TMY methodologies
 methS = [1 1 0 1 1]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
 num_cand = 5; % Number of candidates. Must be <= than the number of years
 if num_cand > num_years
@@ -63,6 +63,10 @@ nbins = 10; % Number of bins for cumulative distribution functions
 % max_dist = 5; % Maximum distance in the days used for the substitution (usually already defined in validation)
 max_times = 4; % Maximum number of times that the same day can be repeated
 max_subs = 8; % Maximum number of substitutions allowed each month
+
+%% 6 - Adding meteorological data
+meteofile = 'Alice_Springs-hour.csv';
+num_obs_meteo = 1; % Number of observations per hour of meteorological data file
 
 % Information for SAM CSV format
 sam_format = true; % Define if this file should be printed
@@ -78,8 +82,7 @@ if sam_format
 
     labels{1} = 'Year'; labels{2} = 'Month'; labels{3} = 'Day'; labels{4} = 'Hour';
     labels{5} = 'Minute'; labels{6} = 'GHI'; labels{7} = 'DNI'; labels{8} = 'DHI';
-    labels{9} = 'Tdry'; labels{10} = 'Tdew'; labels{11} = 'Twet'; labels{12} = 'RH';
-    labels{13} = 'Pres'; labels{14} = 'Wspd';
+    labels{9} = 'Tdry'; labels{10} = 'RH'; labels{11} = 'Pres'; labels{12} = 'Wspd';
     options_sam.labels = labels;
 end
 
@@ -113,13 +116,15 @@ if iec_format
     options_iec.nodata = no_data; % No data value
     
     labelsIEC{1} = 'time'; labelsIEC{2} = 'time_orig';
-    labelsIEC{3} = 'dni'; labelsIEC{4} = 'dniqcflag';
+    labelsIEC{3} = 'ghi'; labelsIEC{4} = 'dni'; labelsIEC{5} = 'dhi';
+    labelsIEC{6} = 'air_temperature'; labelsIEC{7} = 'relative_humidity';
+    labelsIEC{8} = 'air_pressure'; labelsIEC{9} = 'wind_speed';
     options_iec.labels = labelsIEC;
 end
 
 %% c - Paths definition
 path_in = '..\BSRNData\ASP'; % Input data in annual files
-path_meteo = '..\METEOData'; % Meteo data in annual excel files
+path_meteo = '..\ASPMeteo'; % Meteo data in annual excel files
 path_out = '..\OUT_ASP';
 path_format = [path_out '\1_FORMAT']; % Output standard data structure
 path_qc = [path_out '\2_QC']; % Output Quality Control

@@ -11,8 +11,6 @@ function [ ST ] = iec_write(filename_out,iec_out,time_func_str,num_obs,options_i
 %   in ISO 8601 format. A functional date is usually required in the case
 %   of typical years files.
 %   num_obs: Number of observations per hour.
-%   name_series: Name of the methodology used for the generation of this
-%   series.
 %   options_iec: Structure with the headers and labels. Defined in the
 %   configuration case file.
 %
@@ -21,7 +19,7 @@ function [ ST ] = iec_write(filename_out,iec_out,time_func_str,num_obs,options_i
 %
 % - F. Mendoza (May 2017)
 
-date_num = 6; % Number of values that conform the date [Year Month Day Hour ...]
+date_num = 6; % Number of columns that conform the date [Year Month Day Hour ...]
 time_str = cellstr(datestr(iec_out(:,1:date_num),'yyyy-mm-ddTHH:MM:SS')); % Original date. Maybe not always 1:6 TODO!!!
 
 headers{1,1} = ['#MET_IEC.v1.0 headerlines: ', num2str(options_iec.hl,'%d')];
@@ -67,31 +65,34 @@ eol = options_iec.eol;
 fileID = fopen(filename_out,'W');
 formatSpec = strcat('%s',eol);
 for j = 1:size(headers,1)
-%     fprintf(fileID,'%s\n',headers{j});
-    fprintf(fileID,formatSpec,headers{j});
+    fprintf(fileID,formatSpec,headers{j}); % Write headers
 end
 formatSpec = strcat('%s',del);
 for j = 1:size(labels,2)
-%     fprintf(fileID,'%s\t',labels{j});
-    fprintf(fileID,formatSpec,labels{j});
+    fprintf(fileID,formatSpec,labels{j}); % Write labels
 end
-% fprintf(fileID,'\n');
 fprintf(fileID,eol);
+
+formatSpec = strcat('%s',del); % Init
+nVars = size(iec_out,2)-date_num;
 if isnan(time_func_str{1}) % If it is not required a functional date
-    formatSpec = strcat('%s',del,'%4.0f',del,'%3d',eol);
+    for i = 1:nVars
+        formatSpec = strcat(formatSpec,'%4.1f',del);
+    end
+    formatSpec = strcat(formatSpec(1:end-length(del)),'\n');
+    
     for j = 1:size(iec_out,1)
-%         fprintf(fileID,...
-%             '%s\t %4.0f\t %3d\n',...
-%             time_str{j}, iec_out(j,date_num+1:end));
         fprintf(fileID,formatSpec,...
             time_str{j}, iec_out(j,date_num+1:end));
     end
 else % If it is required a functional date (typical year case)
-    formatSpec = strcat('%s',del,'%s',del,'%4.0f',del,'%3d',eol);
+    formatSpec = strcat(formatSpec,'%s',del);
+    for i = 1:nVars
+        formatSpec = strcat(formatSpec,'%4.1f',del);
+    end
+    formatSpec = strcat(formatSpec(1:end-length(del)),'\n');
+    
     for j = 1:size(iec_out,1)
-%         fprintf(fileID,...
-%             '%s\t %s\t %4.0f\t %3d\n',...
-%             time_func_str{j}, time_str{j}, iec_out(j,date_num+1:end));
         fprintf(fileID,formatSpec,...
             time_func_str{j}, time_str{j}, iec_out(j,date_num+1:end));
     end

@@ -4,13 +4,10 @@ function [ ST ] = sam_write(filename_out,sam_out,options_sam)
 %https://sam.nrel.gov/weather
 %https://sam.nrel.gov/sites/default/files/content/documents/pdf/wfcsv.pdf
 %   INPUT:
-%   filename_out: Name of the output CSV SAM file
+%   filename_out: Name of the output CSV SAM file.
 %   sam_out: Data that will be written out. The number of columns must be
 %   coherent with the number of labels defined in the configuration case
 %   file.
-%   num_obs: Number of observations per hour.
-%   name_series: Name of the methodology used for the generation of this
-%   series.
 %   options_sam: Structure with the headers and labels. Defined in the
 %   configuration case file.
 %
@@ -31,15 +28,26 @@ labels = options_sam.labels; % Labels defined in the configuration case file
 
 fileID = fopen(filename_out,'W');
 for j = 1:size(headerSAM,1)
-    fprintf(fileID,'%s\n',headerSAM{j});
+    fprintf(fileID,'%s\n',headerSAM{j}); % Write first two rows of headers
 end
 for j = 1:size(labels,2)
-    fprintf(fileID,'%s,',labels{j});
+    fprintf(fileID,'%s,',labels{j}); % Write labels
 end
 fprintf(fileID,'\n');
-fprintf(fileID,...
-    '%d,%d,%d,%d,%d,%.0f,%.0f,%.0f\n',...
-    sam_out');
+
+formatSpec = ''; % Init
+nDate = 5; nIrr = 3; nAdd = size(sam_out,2)-(nDate+nIrr);
+for i = 1:nDate
+    formatSpec = strcat(formatSpec,'%d,');
+end
+for i = 1:nIrr
+    formatSpec = strcat(formatSpec,'%.0f,');
+end
+for i = 1:nAdd
+    formatSpec = strcat(formatSpec,'%.1f,');
+end
+formatSpec = strcat(formatSpec(1:end-1),'\n');
+fprintf(fileID,formatSpec,sam_out');
 ST = fclose(fileID);
 
 end

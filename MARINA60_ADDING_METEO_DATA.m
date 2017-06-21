@@ -4,8 +4,9 @@
 %
 % Developed in the context of ASTRI
 %
-% MODULE 60: ADDING METEO DATA
+% MODULE 6: ADDING METEO DATA
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT
 %  (1) OUTPUT-GENERACION (3 sheets by case)
@@ -14,216 +15,136 @@
 %        sheet CASE_M      final monthly values
 %  (2) TMY-ASTRI-CASE.TXT
 %        txt file: aaaa mm dd hh MM SS GHI eGHI DNI eDNI DHI eDNI
-% OUTPUT 
-% ..\OUTPUT\4_TMY
+%
+% OUTPUT
+% ..\OUTPUT\4_ASR\NAME_SERIES
 %  (2) TMY-ASTRI-CASE.TXT
 %      txt file: aaaa mm dd hh MM SS GHI eGHI DNI eDNI DHI eDNI WEADER
-%      
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clc
-clear
-close all
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
-run('Configuration_BSRN_ASP.m');
-load(strcat(ruta_tmy,'\','output_series'));
+if ~exist(path_asr,'dir')
+    mkdir(path_asr);
+end
 
-for i=1:num_series
+namef = [loc '00-' owner_station '-' num]; % General name for the series
+load(strcat(path_asr,'\','out_series')); % Load final radiation series
+load(strcat(path_val,'\',namef,'-',num2str(series_in(1,1)),'_VAL')); % Get any validation structure for geo data
+num_series = size(SERIES_out_int,3); % Number of series to add meteo data and print
+headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Aug';'Sep';'Oct';'Nov';'Dic'}; % Headers months
+% Additional data elements from the weather file required by SAM to
+% execute a CSP plant simulation. See SAM Help.
+addMeteo = {'t_air [degC]','rh [%]','bp [hPa]','ws [m/s]'};
+addVars = size(addMeteo,2);
+
+if iec_format % Create a functional date vector in ISO 8601 format if IEC 62862-1-3 format is required
+    time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
+        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-3)
+    time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
+end
+
+%% Read other meteorological database
+freadmeteo = strcat(path_meteo,'\',meteofile);
+[headersMeteo, meteonormData] = read_MeteoData(freadmeteo,num_obs_meteo);
+
+%% Match data frequency
+if num_obs==num_obs_meteo % Same sampling frequency
+    METEO_out = meteonormData(:,8:end); % Only the additional meteorological variables are considered
+elseif num_obs>num_obs_meteo % Interpolate to keep the original higher sampling
+    xq = transpose(1:8760*num_obs);
+    meteoFreq = num_obs/num_obs_meteo;
+    x = transpose(1:meteoFreq:8760*num_obs); x = [x; xq(end)]; % Add a row to interpolate the last hour
+    METEO_out = interp1(x,[meteonormData(:,8:end); meteonormData(end,8:end)],xq,'linear'); % Only the additional meteorological variables are interpolated
+    num_obs_meteo = num_obs;
+else % Reduce the intrahourly frequency to match the radiation sampling frequency
+    METEO_out = reduce_intrahour_freq(meteonormData(8:end),num_obs_meteo,num_obs,0); % Only the additional meteorological variables are considered
+    num_obs_meteo = num_obs;
+end
+
+%% Get the column number of the wanted variables
+varsMeteoSAM = {'Tdry','RH','Pres','Wspd'}; % Wanted additional variables
+cols = false(1,length(headersMeteo)-7); % Seven initial columns are date and radiation
+for v = 1:addVars
+    colv = strcmp(varsMeteoSAM(v),headersMeteo(8:end));
+    cols = cols|colv;
+end
+cols = find(cols);
+
+% Loops through Series and Months
+for i = 1:num_series
+    path_series = strcat(path_asr,'\',name_series{i});
+    if ~exist(path_series,'dir')
+        mkdir(path_series);
+    end
     
-    nombre_serie=raw{1,i+1};
-    ruta_serie=strcat(ruta_tmy,'\',nombre_serie);
-    ruta_fig=strcat(ruta_tmy,'\',nombre_serie,'\figures');
-    [s,mess,messid] = mkdir(ruta_fig);
-
-    num=0;
-    temp=[]; rhum=[] ; wvel = [];
-
-    fprintf('Interpolating METEO in %s serie \n',nombre_serie); 
-
-    for mes=1:12
-        
-        prim_fila=(num)*24*num_obs+1;   
-        anno_dat = output_series_int(prim_fila,1,i); anno_str = num2str(anno_dat);
-        
-        file_meteo= strcat(ruta_meteo,'\','Alice_',anno_str,'_Weather.xlsx');
-        [datos, letras, raw_meteo]= xlsread(file_meteo,'Raw');
-        
-        date_meteo_vec=[datos(:,2) datos(:,3) datos(:,4) datos(:,5)...
-            datos(:,6) zeros(length(datos(:,1)),1)];
-
-        date_meteo_num = datenum(date_meteo_vec);
-        
-        for dia=1:num_dias_mes(mes)
-            
-            num=num+1;
-            inicio=(num-1)*24*num_obs+1;
-            final =(num)*24*num_obs;
-            
-            trozo = output_series_int(inicio:final,:,i);
-            
-            mes_dat  = trozo(1,2); mes_str  = num2str(mes_dat);
-            dia_dat  = trozo(1,3); dia_str  = num2str(dia_dat);
-            
-            % datos from meteo
-            dia_sel = datenum([anno_dat mes_dat dia_dat]);
-            selec_meteo = floor(date_meteo_num) == dia_sel;
-            %find the positions of the today's meteo
-            positions=find(selec_meteo);
-            % adds the position before and afeter for interpolation
-            positions2=[positions(1)-1; positions; positions(end)+1];
-            selec_meteo(positions2)=1;
-            
-            % do a whole vector for interpolated values
-            output_pos1 = date_meteo_num(positions2(1));
-            int = 1/(24*num_obs);
-            if positions2(end)>length(date_meteo_num)
-                date_meteo_num=[date_meteo_num;date_meteo_num(end)+1/(24*2)];
-                datos=[datos;datos(end,:)];
+    fprintf('\nAdding meteorological data to the %s series for simulation.\n',name_series{i});
+    
+    %% Verify which additional meteo data is included
+    if cellfun(@isempty,otherMeteo)
+        fprintf('There are not the additional meteorological data required for simulation of the %s series.\n',...
+            name_series{i});
+    else
+        available = false(12,addVars);
+        for month = 1:12
+            for v = 1:addVars
+                avl = strcmp(otherMeteo(month,v,i),addMeteo);
+                available(month,:) = available(month,:)|avl;
             end
-            output_pos2 = date_meteo_num(positions2(end));
-            out_vector=output_pos1:int:output_pos2;
             
-            % extract  meteo values at the input frequency (+2)
-            horadec_meteo = datos(selec_meteo,5)+ datos(selec_meteo,6)/60;
-            Temp = (datos(selec_meteo,7));
-            Rhum = (datos(selec_meteo,11));
-            Wvel = (datos(selec_meteo,13));
-            Patm = (datos(selec_meteo,17));
-            
-            % estract solar data (just for testing if needed)
-            i0=datosval.astro(inicio:final,9);
-            hora = trozo(:,4);
-            min =  trozo(:,5 );
-            horadec = hora + min./60;
-            GHI = trozo(:,7 );
-            DNI = trozo(:,9 );
-            DHI = trozo(:,11);
-            
-            fecha_str=['Month ' mes_str ' - Day ' dia_str ' - Year ' anno_str ];
-
-            % checking and removing NaN in the first and the last input data
-            hay=find(~isnan(Temp));
-            Temp(1)=Temp(hay(1)); Temp(end)=Temp(hay(end)); clear hay
-            hay=find(~isnan(Rhum));
-            Rhum(1)=Rhum(hay(1)); Rhum(end)=Rhum(hay(end)); clear hay
-            hay=find(~isnan(Wvel));
-            Wvel(1)=Wvel(hay(1)); Wvel(end)=Wvel(hay(end)); clear hay
-            
-            % off the warning for NaNs in the inputs data => not used.
-            warning('off','MATLAB:interp1:NaNstrip');
-            Temp_kk=interp1(date_meteo_num(selec_meteo),Temp,out_vector,'spline');
-            Rhum_kk=interp1(date_meteo_num(selec_meteo),Rhum,out_vector,'spline');
-            Wvel_kk=interp1(date_meteo_num(selec_meteo),Wvel,out_vector,'spline');
-
-            % cut the today's positions
-            % in the interpolated vector
-            selec_out = floor(out_vector) == dia_sel;
-            Temp_int= Temp_kk(selec_out);
-            Rhum_int= Rhum_kk(selec_out);
-            Wvel_int= Wvel_kk(selec_out);
-            % in the non imterpolated vector
-            Temp(1)=[];Rhum(1)=[];Wvel(1)=[];
-            horadec_meteo(1)=[];
-            Temp(end)=[];Rhum(end)=[];Wvel(end)=[];
-            horadec_meteo(end)=[];
-            
-%             % plot interpolate and input values
-%             figure
-%             x_min=0:1/60:(24-1/60);
-%             h1=plot(x_min,Temp_int);
-%             hold on
-%             set(h1,'LineStyle','-','Color','g','Marker','o');
-%             h2=plot(horadec_meteo,Temp);
-%             set(h2,'LineStyle','-','Color','y','Marker','*');
-%             h3=plot(x_min,Rhum_int);
-%             set(h3,'LineStyle','-','Color','b','Marker','o');
-%             h4= plot(horadec_meteo,Rhum);
-%             set(h4,'LineStyle','-','Color','r','Marker','*');
-%             h5=plot(x_min,Wvel_int);
-%             set(h5,'LineStyle','-','Color','m','Marker','o');
-%             h6= plot(horadec_meteo,Wvel);
-%             set(h6,'LineStyle','-','Color','c','Marker','*');
-%             grid on
-%             axis([0 24 0 100]);
-%             title(['(' nombre_serie ') - ' fecha_str ],'Fontsize',16);
-%             xlabel('Local Universal Time','Fontsize',16);
-%             ylabel('ºC / % / m/s','Fontsize',16);
-%             leg=legend('Temp int','Temp','Rhum int','Rhum','Wvel inte','Wvel');
-% %             set(leg,'Fontsize',10,'Location','EastInside');
-%             filename=strcat('Meteo-',nombre_serie,'-',fecha_str);
-%             print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-%             
-%             % pause
-%             close all
-            
-            temp=[temp; Temp_int'];
-            rhum=[rhum; Rhum_int'];
-            wvel=[wvel; Wvel_int'];
+            missMeteo = addMeteo(~available(month,:));
+            if ~isempty(missMeteo)
+                fprintf('For %s, %d is missing the following meteorological data: ',...
+                    headers_m{month},series_in(month,i))
+                for k = 1:length(missMeteo)
+                    fprintf('%s ', missMeteo{k});
+                end
+                fprintf('\n');
+            end
         end
+    end
+
+    %% Add the meteo data
+    SERIES_out_int(:,13:end,i) = METEO_out(:,cols); % Columns of the wanted variables
+
+    %% Write down SAM CSV format ------------------------------------------
+    if sam_format
+        filename_out = strcat(path_series,'\','SAM_',namef,'_',name_series{i},'.csv');
+        sam_out = SERIES_out_int(:,[1:5,7,9,11,13:end],i); % [Year Month Day Hour Minute GHI DNI DHI t_air rh bp ws]
+        % Continuous day in the month along the year (override day substitutions for final csv file)
+        m31 = zeros(1,31*24*num_obs); l = 1;
+        for d = 1:31
+            for o = 1:24*num_obs
+                m31(1,l) = d;
+                l = l+1;
+            end
+        end
+        m30 = m31(1,1:30*24*num_obs); m28 = m31(1,1:28*24*num_obs);
+        year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
+        sam_out(:,3) = year_d; % Update days without substitutions [Year Month "Day"]
         
+        options_sam.lat = dataval.geodata.lat; % Add geodata from data validation structure
+        options_sam.lon = dataval.geodata.lon;
+        options_sam.alt = dataval.geodata.alt;
+        fprintf('Generating SAM CSV format file for %s series\n',name_series{i});
+        sam_write(filename_out,sam_out,options_sam); % Function
     end
     
-    
-    
-    salida = output_series_int(:,:,i);
-    salida(:,end+1)=round(temp*10)/10;
-    salida(:,end+1)=round(rhum);
-    salida(:,end+1)=round(wvel*10)/10;
-    
-        % Plotting solar radiation outputs
-    
-    figure; 
-    plot(output_series_int(:,7,i) ,'-b')
-    axis([1 525600 0 1600]); grid on;
-    title(['(' nombre_serie ') - GHI' ],'Fontsize',16);
-    xlabel('Observations','Fontsize',16);
-    ylabel('Wh/m^2','Fontsize',16);
-    filename=strcat(nombre_serie,'-GHI');
-    print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-
-    figure; 
-    plot(output_series_int(:,9,i) ,'-r')
-    axis([1 525600 0 1600]); grid on;
-    title(['(' nombre_serie ') - DNI' ],'Fontsize',16);
-    xlabel('Observations','Fontsize',16);
-    ylabel('Wh/m^2','Fontsize',16);
-    filename=strcat(nombre_serie,'-DNI');
-    print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-    
-    figure; 
-    plot(output_series_int(:,11,i),'-c')
-    axis([1 525600 0 1000]); grid on;
-    title(['(' nombre_serie ') - DHI' ],'Fontsize',16);
-    xlabel('Observations','Fontsize',16);
-    ylabel('Wh/m^2','Fontsize',16);
-    filename=strcat(nombre_serie,'-DHI');
-    print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-    close all
-    num=0;
-
-    
-    fprintf('Generating the TXT %s serie with METEO for simulation \n',nombre_serie); 
-
-    % TXT of original Series (num_obs) 
-    fileID = fopen(strcat(ruta_serie,'\','TMY_ASTRI_',nombre_serie,'-MET.txt'),'w');
-    header{1} = 'YEAR'; header{2}= 'MONTH';  header{3}= 'DAY';
-    header{4} = 'HOUR'; header{5}= 'MINUTE'; header{6}= 'SECOND';
-    header{7} = 'GHI(wh/m2)'; header{8}=  'eGHI';  
-    header{9} = 'DNI(wh/m2)'; header{10}= 'eDNI'; 
-    header{11}= 'DHI(wh/m2)'; header{12}= 'eDHI';
-    header{13}= 'Temp(ºC)'; header{14}= 'Rhum(%)'; header{15}= 'Wvel(m/s)';
-    for col=1:14
-        fprintf(fileID,'%10s\t',header{col});
+    %% Write down IEC 62862-1-3 format ------------------------------------
+    if iec_format
+        filename_out = strcat(path_series,'\','ASR_',namef,'_',name_series{i},'.txt');
+        iec_out = SERIES_out_int(:,[1:6,7,9,11,13:end],i); % % [Year Month Day Hour Minute Second GHI DNI DHI t_air rh bp ws]
+        options_iec.lat = dataval.geodata.lat; % Add geodata from data validation structure
+        options_iec.lon = dataval.geodata.lon;
+        options_iec.alt = dataval.geodata.alt;
+        fprintf('Generating IEC 62862-1-3 format file for %s series\n',name_series{i});
+        iec_write(filename_out,iec_out,time_func_str,num_obs,options_iec); % Function
     end
-    fprintf(fileID,'%10s\r\n',header{15});
-    fprintf(fileID,...
-     '%10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d %8.1f\t %10d\t %8.1f\r\n',...
-     salida');
-    fclose(fileID);
-    
-    salidas(:,:,i)=salida;
     
 end
 
-save(strcat(ruta_tmy,'\','output_series_meteo'),'salidas',...
-    'num_series','raw','datosval');
+save(strcat(path_asr,'\','out_series_meteo'),'SERIES_out_int'); % Save results
+% save(strcat(ruta_tmy,'\','output_series_meteo'),'salidas',...
+%     'num_series','raw','datosval');

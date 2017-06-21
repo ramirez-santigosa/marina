@@ -9,13 +9,13 @@
 % Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT:
-% ..\OUTPUT\4_CASES
+% ..\OUTPUT\4_TMYMETH
 %       'loc00-owner_station-num'-IN_SERIESGEN.xlsx
 % ..\OUTPUT\3_VALIDATION
 %       'dataval' structure of the selected years (i.e. loc00-owner_station-num-YYYY_VAL)
 %
 % OUTPUT:
-% ..\OUTPUT\5_TMY\NAME_SERIES
+% ..\OUTPUT\5_ASR\NAME_SERIES
 %  (1) Excel report 'loc00-owner_station-num'_SERIES Sheets:
 %       - 'name_series'_D: Definitive daily radiation series of the typical year
 %       - 'name_series'_M: Definitive monthly radiation series of the typical year
@@ -30,20 +30,14 @@
 close, clearvars -except cfgFile, %clc
 run(cfgFile); % Run configuration file
 
-if ~exist(path_cases,'dir')
+if ~exist(path_asr,'dir')
     mkdir(path_asr);
 end
 
 namef = [loc '00-' owner_station '-' num]; % MATLAB files with the results of the validation process
 filename_val = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Validation Excel report
-filename_input = strcat(path_cases,'\',namef,'-IN_SERIESGEN.xlsx'); % Input Generation
+filename_input = strcat(path_meth,'\',namef,'-IN_SERIESGEN.xlsx'); % Input Generation
 num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
-
-if iec_format % Create a functional date vector in ISO 8601 format if IEC 62862-1-3 format is required
-    time_func = (datetime([2015 1 1 0 0 0]):minutes(60/num_obs):...
-        datetime([2015 12 31 23 60-60/num_obs 0]))'; % Functional date (IEC 62862-1-3)
-    time_func_str = cellstr(datestr(time_func,'yyyy-mm-ddTHH:MM:SS')); % Functional date
-end
 
 %% Reading data of the input series generation file
 [~,variable] = xlsread(filename_input,'VARIABLE','A1'); % Read main variable
@@ -83,11 +77,14 @@ colD = 6; DAYS_out = NaN(365,colD,n_series); % Array with the definitive daily s
 colM = 6; MONTHS_out = NaN(12,colM,n_series); % Array with the definitive monthly series
 cosz_out = NaN(365*24*num_obs,1); % Save cosine of zenith angle in case of interpolation
 SERIES_out_int = SERIES_out; % Interpolated series (for variables not included in the validation)
+name_series = cell(1,n_series);
+addVars = 4; otherMeteo = cell(12,addVars,n_series); % Save which additional meteorological variables are included with the data
 
 for i=1:n_series
-    name_series = text_series_in{1,i+1}; % Creation path for results
-    name_series(name_series=='/') = '-'; % Replace '/' by '-' for path creation
-    path_series = strcat(path_asr,'\',name_series);
+    nameSerie = text_series_in{1,i+1}; % Creation path for results
+    nameSerie(nameSerie=='/') = '-'; % Replace '/' by '-' for path creation
+    name_series{i} = nameSerie;
+    path_series = strcat(path_asr,'\',name_series{i});
     if ~exist(path_series,'dir')
         mkdir(path_series);
     end
@@ -97,9 +94,8 @@ for i=1:n_series
         mkdir(path_fig);
     end
     
-    fprintf('\nGenerating the %s series for simulation.\n',name_series);
+    fprintf('\nGenerating the %s series for simulation.\n',name_series{i});
     MV = zeros(12,1); % To save monthly value
-    addVars = 4; otherMeteo = cell(12,addVars); % Save which additional meteorological variables are included with the data
     
     for m = 1:12 % Extraction of the series, daiily and monthly values
         year = series_in(m,i); % Get the number of the year to read the corresponding data
@@ -161,11 +157,14 @@ for i=1:n_series
         if abs(RMV(m,i)-MV(m)) >= limit
             days_m = [days_m_val(:,1) days_m_val(:,cols_main_m(2))/1000]; % # of day and daily irradiance in kWh/m2
             if MV(m) <= RMV(m,i) % Monthly value must increment
-                [resultSubs,substituted,used,counter,ctrl]...
+                [resultSubs,substituted,used,counter,ctrl,warn]...
                     = subs_days_up(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
             elseif MV(m) > RMV(m,i) % Monthly value must decrement
-                [resultSubs,substituted,used,counter,ctrl]...
+                [resultSubs,substituted,used,counter,ctrl,warn]...
                     = subs_days_dw(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
+            end
+            if warn
+                fprintf('Year: %d, Month: %d\n',year,m);
             end
         else % No substitutions are carried out
             resultSubs = NaN; substituted = NaN; used = NaN;
@@ -207,14 +206,14 @@ for i=1:n_series
         % Save which additional meteorological variables are included with the data
         addMeteo = length(dataval.header)-9;
         if addMeteo~=0
-            otherMeteo(m,1:addMeteo) = dataval.header(10:end);
+            otherMeteo(m,1:addMeteo,i) = dataval.header(10:end);
         end
     end
     
     %% Calculation or Interpolation of the other variables
     % Variables not inclued in the validation process are interpolated
     [SERIES_out_int(:,1:12,i),num_cases] = interpolating_holes(SERIES_out(:,1:12,i),cosz_out,num_obs); % Function
-    fprintf('Final interpolation results of the %s series\n',name_series);
+    fprintf('Final interpolation results of the %s series\n',name_series{i});
     fprintf('# of GHI data calculated from the other variables: %d\n',num_cases(1));
     fprintf('# of DNI data calculated from the other variables: %d\n',num_cases(2));
     fprintf('# of DHI data calculated from the other variables: %d\n',num_cases(3));
@@ -222,11 +221,11 @@ for i=1:n_series
     fprintf('# of DNI data interpolated and DHI calculated: %d\n',num_cases(5));
     fprintf('# of GHI data interpolated and DHI calculated: %d\n',num_cases(6));
     fprintf('# of GHI, DNI data interpolated and DHI calculated: %d\n',num_cases(7));
-    SERIES_out_int(13:end) = SERIES_out(13:end); % Add other meteo vars
+    SERIES_out_int(:,13:end,i) = SERIES_out(:,13:end,i); % Add other meteo vars
         
     %% Write down EXCEL series report
-    filename_out = strcat(path_series,'\',namef,'_',name_series,'.xlsx'); % Output Generation
-    fprintf('Generating EXCEL report for %s series\n',name_series);
+    filename_out = strcat(path_series,'\',namef,'_',name_series{i},'.xlsx'); % Output Generation
+    fprintf('Generating EXCEL report for %s series\n',name_series{i});
     
     % Switch off new excel sheet warning
     warning off MATLAB:xlswrite:AddSheet
@@ -254,7 +253,7 @@ for i=1:n_series
     end
     
     day_ex = num2cell([year_y year_m DAYS_out(:,:,i) substituted_ex]);
-    xlswrite(filename_out,[headerD; day_ex],strcat(name_series,'_D'),'A1');
+    xlswrite(filename_out,[headerD; day_ex],strcat(name_series{i},'_D'),'A1');
         
     % Write the definitive monthly series of the typical year -------------
     headerM{1} = 'Year';
@@ -265,88 +264,35 @@ for i=1:n_series
     
     subs_ex = cell2mat(finalSubs.counter(i,:))'; % For Excel report
     month_ex = num2cell([series_in(:,i) MONTHS_out(:,:,i) RMV(:,i) MV subs_ex]);
-    xlswrite(filename_out,[headerM; month_ex],strcat(name_series,'_M'),'A1');
-
-    %% Add other meteo
-    % Additional data elements from the weather file required by SAM to
-    % execute a CSP plant simulation. See SAM Help.
-    addMeteo = {'t_air [degC]','rh [%]','bp [hPa]','ws [m/s]'};
-    if cellfun(@isempty,otherMeteo)
-        fprintf('There are not the additional meteorological data required for simulation of the %s series.\n',...
-            name_series);
-    else
-        available = false(12,addVars);
-        for month = 1:12
-            for v = 1:4
-                avl = strcmp(otherMeteo(month,v),addMeteo);
-                available(month,:) = available(month,:)|avl;
-            end
-            
-        end
-    end
-    
-    %% Write down txt files
-    % SAM CSV format ------------------------------------------------------
-    if sam_format
-        filename_out = strcat(path_series,'\','SAM_',namef,'_',name_series,'.csv');
-        sam_out = SERIES_out_int(:,[1:5,7,9,11],i); % [Year Month Day Hour Minute GHI DNI DHI]. Without the flags
-        % Continuous day in the month along the year (override day substitutions for final csv file)
-        m31 = zeros(1,31*24*num_obs); l = 1;
-        for d = 1:31
-            for o = 1:24*num_obs
-                m31(1,l) = d;
-                l = l+1;
-            end
-        end
-        m30 = m31(1,1:30*24*num_obs); m28 = m31(1,1:28*24*num_obs);
-        year_d = [m31 m28 m31 m30 m31 m30 m31 m31 m30 m31 m30 m31]; % No leap years
-        sam_out(:,3) = year_d; % Update days without substitutions [Year Month "Day"]
-                
-        options_sam.lat = dataval.geodata.lat; % Add geodata from data validation structure
-        options_sam.lon = dataval.geodata.lon;
-        options_sam.alt = dataval.geodata.alt;
-        fprintf('Generating SAM CSV format file for %s series\n',name_series);
-        sam_write(filename_out,sam_out,options_sam); % Function
-    end
-    
-    % IEC 62862-1-3 format ------------------------------------------------
-    if iec_format
-        filename_out = strcat(path_series,'\','ASR_',namef,'_',name_series,'.txt');
-        iec_out = SERIES_out_int(:,[1:6 9:10],i); % [Year Month Day Hour Minute Second DNI fDNI]
-        options_iec.lat = dataval.geodata.lat; % Add geodata from data validation structure
-        options_iec.lon = dataval.geodata.lon;
-        options_iec.alt = dataval.geodata.alt;
-        fprintf('Generating IEC 62862-1-3 format file for %s series\n',name_series);
-        iec_write(filename_out,iec_out,time_func_str,num_obs,options_iec); % Function
-    end
+    xlswrite(filename_out,[headerM; month_ex],strcat(name_series{i},'_M'),'A1');
     
     %% Plot figures
     % Plotting solar radiation outputs
     figure;
     plot(SERIES_out_int(:,7,i) ,'-b') % Definitive GHI series -------------
     axis([1 365*24*num_obs 0 1600]); grid on;
-    title([name_series,' - GHI'],'Fontsize',16);
+    title([name_series{i},' - GHI'],'Fontsize',16);
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
-    filename = strcat(name_series,'-GHI');
+    filename = strcat(name_series{i},'-GHI');
     print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
     
     figure;
     plot(SERIES_out_int(:,9,i) ,'-r') % Definitive DNI series -------------
     axis([1 365*24*num_obs 0 1600]); grid on;
-    title([name_series,' - DNI'],'Fontsize',16);
+    title([name_series{i},' - DNI'],'Fontsize',16);
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
-    filename = strcat(name_series,'-DNI');
+    filename = strcat(name_series{i},'-DNI');
     print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
     
     figure;
     plot(SERIES_out_int(:,11,i),'-c') % Definitive DHI series -------------
     axis([1 365*24*num_obs 0 1000]); grid on;
-    title([name_series,' - DHI'],'Fontsize',16);
+    title([name_series{i},' - DHI'],'Fontsize',16);
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
-    filename = strcat(name_series,'-DHI');
+    filename = strcat(name_series{i},'-DHI');
     print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
     close all
     
@@ -381,12 +327,12 @@ for i=1:n_series
 %             plot(hourdec,DHI,'c-o');
 %             axis([0 24 0 1600]);
 %             grid on
-%             title([name_series,' - ',date_str],'Fontsize',16);
+%             title([name_series{i},' - ',date_str],'Fontsize',16);
 %             xlabel('Local Universal Time','Fontsize',16);
 %             ylabel('W/m^2','Fontsize',16);
 %             leg = legend('G0','GHI','DNI','DHI');
 %             set(leg,'Fontsize',16);
-%             filename = strcat(name_series,'-',date_str);
+%             filename = strcat(name_series{i},'-',date_str);
 %             print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
 %             close all
 %         end
@@ -394,5 +340,5 @@ for i=1:n_series
     
 end
 
-save(strcat(path_asr,'\','out_series'),'SERIES_out_int','DAYS_out',...
-    'MONTHS_out','finalSubs'); % Save results
+save(strcat(path_asr,'\','out_series'),'name_series','series_in','SERIES_out_int',...
+    'DAYS_out','MONTHS_out','finalSubs','otherMeteo'); % Save results

@@ -1,4 +1,4 @@
-function [ out_series ] = reduce_intrahour_freq( in_series, in_num_obs, out_num_obs )
+function [ out_series ] = reduce_intrahour_freq( in_series, in_num_obs, out_num_obs, dateColumns )
 %REDUCE_INTRAHOUR_FREQ Function for reducing the number of observations per
 %hour of the input series.
 %   INPUT:
@@ -29,8 +29,8 @@ end
 out_length = size(in_series,1)/n_obs;
 out_series = NaN(out_length,n_vars);
 for i = 0:out_length-1
-    out_series(i+1,1:6) = in_series(i*n_obs+1,1:6);
-    out_series(i+1,7:end) = mean(in_series(i*n_obs+1:(i+1)*n_obs,7:end));
+    out_series(i+1,1:dateColumns) = in_series(i*n_obs+1,1:dateColumns);
+    out_series(i+1,dateColumns+1:end) = mean(in_series(i*n_obs+1:(i+1)*n_obs,dateColumns+1:end));
 end
 
 end
