@@ -39,6 +39,7 @@ file_xls = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Name input file after va
 % Input for Series Generation (Summary of the methodologies outputs)
 outYears = zeros(12,sum(methS)); %[outSNL(:,1), outLMR(:,1) outIEC2(:,1) outDRY(:,1) outFR(:,1)];
 outRMV = zeros(12,sum(methS)); i_meth = 0; %[outSNL(:,2), outLMR(:,2) outIEC2(:,1) outDRY(:,1) outFR(:,1)];
+mainVar = cell(1,sum(methS)); % Save main variable in each method
 fInputGen = strcat(path_meth,'\',namef,'-IN_SERIESGEN.xlsx');
 
 % Switch off new excel sheet warning
@@ -72,11 +73,11 @@ data_day_GHI(:,4) = reshape(GHI_d,[],1); % Adding daily values to the consecutiv
 %% Reading the monthly data and flags
 Val_Month = xlsread(file_xls, 'Val_Month');
 colDNIm = 5:6:6*num_years; % Columns monthly DNI data
-% colGHIm = 2:6:6*num_years; % Columns monthly GHI data
+colGHIm = 2:6:6*num_years; % Columns monthly GHI data
 colDNImf = 6:6:6*num_years; % Columns monthly DNI flag
 colGHImf = 3:6:6*num_years; % Columns monthly GHI flag
 DNI_m = Val_Month(:,colDNIm); % DNI monthly values
-% GHI_m = Val_Month(:,colGHIm); % GNI monthly values
+GHI_m = Val_Month(:,colGHIm); % GNI monthly values
 DNI_mf = Val_Month(:,colDNImf); % DNI monthly validation flag
 GHI_mf = Val_Month(:,colGHImf); % GHI monthly validation flag
 
@@ -95,6 +96,7 @@ if methS(1)==1 % IEC1-SNL
     
     i_meth = i_meth+1; outYears(:,i_meth) = outSNL(:,1);
     outRMV(:,i_meth) = outSNL(:,2);
+    mainVar{1,i_meth} = 'DNI';
     close all
 end
 %% IEC1/LMR
@@ -113,6 +115,7 @@ if methS(2)==1 % IEC1-LMR
     
     i_meth = i_meth+1; outYears(:,i_meth) = outLMR(:,1);
     outRMV(:,i_meth) = outLMR(:,2);
+    mainVar{1,i_meth} = 'DNI';
     close all
 end
 %% IEC2
@@ -120,11 +123,12 @@ if methS(3)==1 % IEC2
     
     fOutIEC2 = strcat(path_meth,'\',namef,'-IEC2.xlsx'); % Output file TMM IEC2
     % IEC2 RMV calculation and report
-    outIEC2 = tmyIEC2(DNI_m(:,10:15),fOutIEC2); % Dummy function TO DO !!!
+    outIEC2 = tmyIEC2(GHI_m(:,10:15),fOutIEC2,GHI_m,year_ini:year_end); % Dummy function TO DO !!!
     disp('IEC2 methodology executed. RMV determined.');
     
-    i_meth = i_meth+1; outYears(:,i_meth) = zeros(12,1); % Which year assign in this case?
-    outRMV(:,i_meth) = outIEC2(:,1);
+    i_meth = i_meth+1; outYears(:,i_meth) = outIEC2(:,1);
+    outRMV(:,i_meth) = outIEC2(:,2);
+    mainVar{1,i_meth} = 'GHI';
     close all
 end
 %% Danish method (DRY)
@@ -137,6 +141,7 @@ if methS(4)==1 % DRY
     
     i_meth = i_meth+1; outYears(:,i_meth) = outDRY(:,1);
     outRMV(:,i_meth) = outDRY(:,2);
+    mainVar{1,i_meth} = 'DNI';
     close all
 end
 %% Festa-Ratto (F-R)
@@ -149,16 +154,16 @@ if methS(5)==1 % F-R
     
     i_meth = i_meth+1; outYears(:,i_meth) = outFR(:,1);
     outRMV(:,i_meth) = outFR(:,2);
+    mainVar{1,i_meth} = 'DNI';
     close all
 end
 
 %% INPUT FOR SERIES GENERATION
 % Write the inputs for series generation
-headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Aug';'Sep';'Oct';'Nov';'Dic'}; % Headers months
-mainVar = {'DNI'};
-xlswrite(fInputGen,mainVar,'VARIABLE','A1'); % Main variable
-
 meth_head = {'IEC1/SNL', 'IEC1/LMR', 'IEC2', 'DRY', 'F-R'};
+xlswrite(fInputGen,[meth_head(logical(methS)); mainVar],'VARIABLE','A1'); % Main variable
+
+headers_m = {'Jan';'Feb';'Mar';'Apr';'May';'Jun';'Jul';'Aug';'Sep';'Oct';'Nov';'Dic'}; % Headers months
 input_head = {'MONTH' meth_head{logical(methS)}};
 
 % Input

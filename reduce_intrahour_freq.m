@@ -6,6 +6,7 @@ function [ out_series ] = reduce_intrahour_freq( in_series, in_num_obs, out_num_
 %   columns as variables.
 %   in_num_obs: Number of observations per hour of the input series.
 %   out_num_obs: Number of observations per hour of the output series.
+%   dateColumns: Number of columns corresponding to the date.
 %
 %   OUTPUT:
 %   out_series: Series with the reduced frequency

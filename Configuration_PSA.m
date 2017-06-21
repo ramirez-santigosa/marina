@@ -67,13 +67,14 @@ max_subs = 8; % Maximum number of substitutions allowed each month
 %% 6 - Adding meteorological data
 meteofile = 'PSA-hour.csv';
 num_obs_meteo = 1; % Number of observations per hour of meteorological data file
+num_obs_report = 6; % Number of observations per hour of the printed file
 
 % Information for SAM CSV format
 sam_format = true; % Define if this file should be printed
 if sam_format
     options_sam.source = owner_station;
     options_sam.locID = loc;
-    options_sam.city = 'Almeria'; options_sam.reg = 'AN';
+    options_sam.city = 'PSA'; options_sam.reg = 'AN';
     options_sam.country = 'Spain'; % City, Region, Country
 %     options_sam.lat = lat; % geodata is read from data file (lat, lon, alt)
 %     options_sam.lon = lon;

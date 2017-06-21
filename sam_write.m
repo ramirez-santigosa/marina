@@ -41,7 +41,7 @@ for i = 1:nDate
     formatSpec = strcat(formatSpec,'%d,');
 end
 for i = 1:nIrr
-    formatSpec = strcat(formatSpec,'%.0f,');
+    formatSpec = strcat(formatSpec,'%.2f,');
 end
 for i = 1:nAdd
     formatSpec = strcat(formatSpec,'%.1f,');

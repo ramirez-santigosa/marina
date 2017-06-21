@@ -67,6 +67,7 @@ max_subs = 8; % Maximum number of substitutions allowed each month
 %% 6 - Adding meteorological data
 meteofile = 'Alice_Springs-hour.csv';
 num_obs_meteo = 1; % Number of observations per hour of meteorological data file
+num_obs_report = 6; % Number of observations per hour of the printed file
 
 % Information for SAM CSV format
 sam_format = true; % Define if this file should be printed

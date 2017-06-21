@@ -40,20 +40,9 @@ filename_input = strcat(path_meth,'\',namef,'-IN_SERIESGEN.xlsx'); % Input Gener
 num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
 
 %% Reading data of the input series generation file
-[~,variable] = xlsread(filename_input,'VARIABLE','A1'); % Read main variable
-
-switch variable{1}
-    case 'GHI'
-        col_main_m = 7; % Each year, in Validation data structure
-        cols_main_m = 1:3; % Each year, in Excel file (Validation Report)
-    case 'DNI'
-        col_main_m = 9; % Each year, in Validation data structure
-        cols_main_m = 4:6; % Each year, in Excel file (Validation Report)
-    otherwise
-        warning(strcat('The main variable is not identificable in Excel file ',...
-            filename_input,' within the sheet VARIABLE.'))
-end
-
+% Read the main variable of each methodology
+[~,variable] = xlsread(filename_input,'VARIABLE'); % Read main variable
+variable = variable(2,:);
 % Read the years of the selected months to be concatenated and the name of the series
 [series_in,text_series_in,~] = xlsread(filename_input,'INPUT');
 % Read objective data for series generation
@@ -95,6 +84,18 @@ for i=1:n_series
     end
     
     fprintf('\nGenerating the %s series for simulation.\n',name_series{i});
+    switch variable{i}
+        case 'GHI'
+            col_main_m = 7; % Each year, in Validation data structure
+            cols_main_m = 1:3; % Each year, in Excel file (Validation Report)
+        case 'DNI'
+            col_main_m = 9; % Each year, in Validation data structure
+            cols_main_m = 4:6; % Each year, in Excel file (Validation Report)
+        otherwise
+            warning(strcat('The main variable is not identificable in Excel file ',...
+                filename_input,' within the sheet VARIABLE.'))
+    end
+    
     MV = zeros(12,1); % To save monthly value
     
     for m = 1:12 % Extraction of the series, daiily and monthly values
@@ -259,7 +260,7 @@ for i=1:n_series
     headerM{1} = 'Year';
     headerM{2} = 'month'; headerM{3} = 'GHI (kWh/m2)'; headerM{4} = 'fmvGHI';
     headerM{5} = 'month'; headerM{6} = 'DNI (kWh/m2)'; headerM{7} = 'fmvDNI';
-    headerM{8} = [variable{1} ' RMV']; headerM{9} = ['Initial ' variable{1}];
+    headerM{8} = [variable{i} ' RMV']; headerM{9} = ['Initial ' variable{i}];
     headerM{10} = 'Substitutions';
     
     subs_ex = cell2mat(finalSubs.counter(i,:))'; % For Excel report

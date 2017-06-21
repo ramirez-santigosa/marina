@@ -77,7 +77,7 @@ formatSpec = strcat('%s',del); % Init
 nVars = size(iec_out,2)-date_num;
 if isnan(time_func_str{1}) % If it is not required a functional date
     for i = 1:nVars
-        formatSpec = strcat(formatSpec,'%4.1f',del);
+        formatSpec = strcat(formatSpec,'%4.2f',del);
     end
     formatSpec = strcat(formatSpec(1:end-length(del)),'\n');
     
@@ -88,7 +88,7 @@ if isnan(time_func_str{1}) % If it is not required a functional date
 else % If it is required a functional date (typical year case)
     formatSpec = strcat(formatSpec,'%s',del);
     for i = 1:nVars
-        formatSpec = strcat(formatSpec,'%4.1f',del);
+        formatSpec = strcat(formatSpec,'%4.2f',del);
     end
     formatSpec = strcat(formatSpec(1:end-length(del)),'\n');
     
