@@ -19,11 +19,8 @@
 %  (1) Excel report 'loc00-owner_station-num'_SERIES Sheets:
 %       - 'name_series'_D: Definitive daily radiation series of the typical year
 %       - 'name_series'_M: Definitive monthly radiation series of the typical year
-%  (2) Plain text formats
-%  (2a) SAM CSV format 'SAM_...'.csv
-%  (2b) IEC 62862-1-3 format 'ASR_...'.txt
-%  (3) Figures: Plot of the definitive series
-%  (4) out_series.mat: Saves the definitive series, daily and monthly of
+%  (2) Figures: Plot of the definitive series
+%  (3) out_series.mat: Saves the definitive series, daily and monthly of
 %      the typical year
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

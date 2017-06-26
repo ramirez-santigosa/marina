@@ -9,18 +9,19 @@
 % Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INPUT
-%  (1) OUTPUT-GENERACION (3 sheets by case)
-%        sheet CASE_Dini   initial daily values
-%        sheet CASE_Dfin   final daily values
-%        sheet CASE_M      final monthly values
-%  (2) TMY-ASTRI-CASE.TXT
-%        txt file: aaaa mm dd hh MM SS GHI eGHI DNI eDNI DHI eDNI
+% ..\OUTPUT\5_ASR
+%       out_series.mat: Definitive series, daily and monthly of
+%       the typical year
+% ..\OUTPUT\3_VALIDATION
+%       'dataval' structure of the selected years (i.e. loc00-owner_station-num-YYYY_VAL)  
 %
 % OUTPUT
-% ..\OUTPUT\4_ASR\NAME_SERIES
-%  (2) TMY-ASTRI-CASE.TXT
-%      txt file: aaaa mm dd hh MM SS GHI eGHI DNI eDNI DHI eDNI WEADER
-%
+% ..\OUTPUT\5_ASR\NAME_SERIES
+%  (1) Plain text formats
+%  (1a) SAM CSV format 'SAM_...'.csv
+%  (1b) IEC 62862-1-3 format 'ASR_...'.txt
+%  (2) out_series_meteo.mat: Saves the definitive series with the added
+%   meteorological data.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 close, clearvars -except cfgFile, %clc
@@ -48,7 +49,7 @@ end
 
 %% Read other meteorological database
 freadmeteo = strcat(path_meteo,'\',meteofile);
-[headersMeteo, meteonormData] = read_MeteoData(freadmeteo,num_obs_meteo);
+[headersMeteo, meteonormData] = read_MeteoData(freadmeteo,num_obs_meteo); % Function
 
 %% Match data frequency
 if num_obs==num_obs_report % Same sampling frequency for printing
