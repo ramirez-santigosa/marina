@@ -123,7 +123,7 @@ if methS(3)==1 % IEC2
     
     fOutIEC2 = strcat(path_meth,'\',namef,'-IEC2.xlsx'); % Output file TMM IEC2
     % IEC2 RMV calculation and report
-    outIEC2 = tmyIEC2(GHI_m(:,10:15),fOutIEC2,GHI_m,year_ini:year_end); % Dummy function TO DO !!!
+    outIEC2 = tmyIEC2(fileInIEC2,fOutIEC2,GHI_m,year_ini:year_end); % Dummy function TO DO !!!
     disp('IEC2 methodology executed. RMV determined.');
     
     i_meth = i_meth+1; outYears(:,i_meth) = outIEC2(:,1);

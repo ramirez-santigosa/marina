@@ -53,6 +53,7 @@ max_dist = 5; % Maximum distance in the days used for the substitution
 
 %% 4 - TMY methodologies
 methS = [1 1 1 1 1]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
+fileInIEC2 = '..\BSRNData\ASP\data_ASP_IEC2.xlsx'; % File with the sources and indices for IEC2 method
 num_cand = 5; % Number of candidates. Must be <= than the number of years
 if num_cand > num_years
     error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
