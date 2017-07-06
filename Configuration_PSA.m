@@ -6,28 +6,27 @@
 %
 % CONFIGURATION OF VARIABLES
 % Version of July, 2015. L. Ramírez; At CSIRO.
-% Update F. Mendoza (February 2017) at CIEMAT.
+% Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONFIGURATION OF VARIABLES FOR THE TREATMENT OF
-% BSRN SOLAR RADIATION DATA
-% CASE: ALICE SPRING
+% PLATAFORMA SOLAR DE ALMERIA SOLAR RADIATION DATA
+% CASE: PSA
 % INPUT INFORMATION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% a - Input data
 % Specific years of threatment
-year_ini = 1995; % Initial year of data
-year_end = 2014; % Final year of data. Use the same initial year in case of 1 year
+year_ini = 2002; % Initial year of data
+year_end = 2016; % Final year of data. Use the same initial year in case of 1 year
 
-% Specific for Alice Springs
-tzone = 9.5; % Specific time zone of the station location
-owner_station = 'BOM'; % Boureau of Meterology
-loc = 'ASP'; %
-name = 'ALICE_SPRING_BSRN'; % ID BSRN + 00
+% Specific for PSA
+tzone = 1; % Specific time zone of the station location
+owner_station = 'DLR'; % German Aerospace Center
+loc = 'PSA'; %
+name = 'ALMERIA'; % Given name
 num = '01'; % Number of the station (could be more than one station)
 
-% General for a BSRN STATION
-ref_temp = 'UTC+0'; % Time reference in which data is acquired. TST/UTCSXX (S sign, XX shift)
+ref_temp = 'UTC+1'; % Time reference in which data is acquired. TST/UTCSXX (S sign, XX shift)
 time_stamp = 0; % Values: 0/0.5/1 related to beginning/mid/end
 num_obs = 60; % Number of observations per hour
 no_data = NaN; % No data value
@@ -37,8 +36,9 @@ num_years = year_end-year_ini+1; % Number of years
 num_days_m = [31 28 31 30 31 30 31 31 30 31 30 31]; % Number of days in each month (no leap years)
 
 %% 1 - Format
-inputFormat = 'BSRN'; % Options: BSRN, MESOR, ...
-header = {'YYYY','MM','DD','HH','mm','ss','GHI [W/m^2]','DNI [W/m^2]','DHI [W/m^2]'}; % Headers of the standard structure
+inputFormat = 'MESOR'; % Options: BSRN, MESOR, ...
+header = {'YYYY','MM','DD','HH','mm','ss','GHI [W/m^2]','DNI [W/m^2]','DHI [W/m^2]',...
+    't_air [degC]','rh [%]','bp [hPa]','ws [m/s]'}; % Headers of the standard structure
 
 %% 2 - QC
 vars = [1 1 1]; % Variables for QC process [GHI DNI DHI] 1(true)/0(false). Remember, for Test #3 the three variables are required.
@@ -53,8 +53,8 @@ max_dist = 5; % Maximum distance in the days used for the substitution
 
 %% 4 - TMY methodologies
 methS = [1 1 1 1 1]; % Array for select the methodologies to apply [IEC1-SNL IEC1-LMR IEC2 DRY F-R]
-fileInIEC2 = '..\BSRNData\ASP\data_ASP_IEC2.xlsx'; % File with the sources and indices for IEC2 method
 num_cand = 5; % Number of candidates. Must be <= than the number of years
+fileInIEC2 = '..\PSAData\data_PSA_IEC2.xlsx'; % File with the sources and indices for IEC2 method
 if num_cand > num_years
     error('The number of candidates (%d) must be less or equal to the number of years (%d).',num_cand,num_years)
 end
@@ -66,7 +66,7 @@ max_times = 4; % Maximum number of times that the same day can be repeated
 max_subs = 8; % Maximum number of substitutions allowed each month
 
 %% 6 - Adding meteorological data
-meteofile = 'Alice_Springs-hour.csv';
+meteofile = 'PSA-hour.csv';
 num_obs_meteo = 1; % Number of observations per hour of meteorological data file
 num_obs_report = 6; % Number of observations per hour of the printed file
 
@@ -75,8 +75,8 @@ sam_format = true; % Define if this file should be printed
 if sam_format
     options_sam.source = owner_station;
     options_sam.locID = loc;
-    options_sam.city = 'Alice Springs'; options_sam.reg = 'NT';
-    options_sam.country = 'Australia'; % City, Region, Country
+    options_sam.city = 'PSA'; options_sam.reg = 'AN';
+    options_sam.country = 'Spain'; % City, Region, Country
 %     options_sam.lat = lat; % geodata is read from data file (lat, lon, alt)
 %     options_sam.lon = lon;
     options_sam.tzone = tzone;
@@ -125,9 +125,9 @@ if iec_format
 end
 
 %% c - Paths definition
-path_in = '..\BSRNData\ASP'; % Input data in annual files
-path_meteo = '..\ASPMeteo'; % Meteo data in annual excel files
-path_out = '..\OUT_ASP';
+path_in = '..\PSAData'; % Input data in annual files
+path_meteo = '..\PSAMeteo'; % Additional meteo data if required
+path_out = '..\OUT_PSA';
 path_format = [path_out '\1_FORMAT']; % Output standard data structure
 path_qc = [path_out '\2_QC']; % Output Quality Control
 path_val = [path_out '\3_VALIDATION']; % Output validation and gap filling

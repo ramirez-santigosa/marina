@@ -4,298 +4,339 @@
 %
 % Developed in the context of ASTRI
 %
-% MODULE 5: THE TMY SERIES GENERATION
+% MODULE 5: ANNUAL SOLAR RADIATION SERIES GENERATION
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (June 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INPUT
-% ..\OUTPUT\4_CASES
-%       INPUT-GENERATION.xlsx;
-% OUTPUT 
-% ..\OUTPUT\4_TMY
-%  (1) OUTPUT-GENERACION (3 sheets by case)
-%        sheet CASE_Dini   initial daily values
-%        sheet CASE_Dfin   final daily values
-%        sheet CASE_M      final monthly values
-% ..\OUTPUT\4_TMY\CASE
-%  (2) TMY-ASTRI-CASE.TXT
-%        txt file: aaaa mm dd hh MM SS GHI eGHI DNI eDNI DHI eDNI
+% INPUT:
+% ..\OUTPUT\4_TMYMETH
+%       'loc00-owner_station-num'-IN_SERIESGEN.xlsx
+% ..\OUTPUT\3_VALIDATION
+%       'dataval' structure of the selected years (i.e. loc00-owner_station-num-YYYY_VAL)
+%
+% OUTPUT:
+% ..\OUTPUT\5_ASR\NAME_SERIES
+%  (1) Excel report 'loc00-owner_station-num'_SERIES Sheets:
+%       - 'name_series'_D: Definitive daily radiation series of the typical year
+%       - 'name_series'_M: Definitive monthly radiation series of the typical year
+%  (2) Figures: Plot of the definitive series
+%  (3) out_series.mat: Saves the definitive series, daily and monthly of
+%      the typical year
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-clear
-clc
-close all
-run('Configuration_BURNS.m');
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
-[s,mess,messid] = mkdir(ruta_tmy);
-
-% Matlab file with the data structure after validation
-name     = [filedata.loc '00-' filedata.own '-' filedata.num];
-filename_val  =strcat(ruta_val,'\',name);   
-
-% Leemos los datos para el input de la generación de datos 
-% Lee la variable de trabajo
-[num,variable]=xlsread(filename_input,'VARIABLE','A1');
-if strcmp(variable,'GHI')
-    cols_trab=1:3;
-else
-    if strcmp(variable,'DNI')
-    cols_trab=4:6;
-    else
-     fprintf('No se identifica la variable de trabajo');   
-     fprintf('En la excel de INPUT; sheet=VARIABLE');   
-     return;
-    end
+if ~exist(path_asr,'dir')
+    mkdir(path_asr);
 end
-% Lee los años de los meses a concatenar, y el nombre de las series
-[series,texto, raw] = xlsread(filename_input,'INPUT');
-% Lee los datos objetivo de la generación de la serie
-meses_objetivo=xlsread(filename_input,'OBJECTIVE');
 
-%quiero saber el número de columnas=series que tengo que generar
-num_series=numel(series(1,:));
+namef = [loc '00-' owner_station '-' num]; % MATLAB files with the results of the validation process
+filename_val = strcat(path_val,'\',namef,'_VAL','.xlsx'); % Validation Excel report
+filename_input = strcat(path_meth,'\',namef,'-IN_SERIESGEN.xlsx'); % Input Generation
+num_previous_days = [0 cumsum(num_days_m(1:length(num_days_m)-1))]; % Number of days previous to the month start
 
-num_dias_ant=[0 31 59 90 120 151 181 212 243 273 304 334];
+%% Reading data of the input series generation file
+% Read the main variable of each methodology
+[~,variable] = xlsread(filename_input,'VARIABLE'); % Read main variable
+variable = variable(2,:);
+% Read the years of the selected months to be concatenated and the name of the series
+[series_in,text_series_in,~] = xlsread(filename_input,'INPUT');
+% Read objective data for series generation
+RMV = xlsread(filename_input,'OBJECTIVE'); % Representative long term monthly value (Objective value). One column per series.
+ARV = sum(RMV); % Annual Representative Value (so many columns as series)
+n_series = size(series_in,2); % Number of columns/series to generate
 
-for i=1:num_series   
-    
-    SERIES_meses=[];
-    dias_meses=[];
-    valores_meses=[];
+%% Reading data of the validation process results
+% Read daily validation process results
+[days_y_val, text_val] = xlsread(filename_val,'Val_day');
+days_y_val(:,1) = []; % Delete month column
+year_ini = str2double(text_val{1,2}(1:4)); year_end = str2double(text_val{1,end}(1:4));
+years_val = year_ini:year_end; % Years included in the validation process
+% Read monthly validation process results
+month_y_val = xlsread(filename_val,'Val_Month');
 
-    SERIES_salida=[];
-    dias_salida=[];
-    
-    nombre_serie=raw{1,i+1};
-    ruta_serie=strcat(ruta_tmy,'\',nombre_serie);
-    [s,mess,messid] = mkdir(ruta_serie);
-    
-    ruta_fig=strcat(ruta_serie,'\','figures');
-    [s,mess,messid] = mkdir(ruta_fig);
+%% Loops through Series and Months
+% Pre-allocation output vars
+colS = 16; SERIES_out = NaN(365*24*num_obs,colS,n_series); % Array with the definitive series. colS maximum number of variables including other meteo
+colD = 6; DAYS_out = NaN(365,colD,n_series); % Array with the definitive daily series
+colM = 6; MONTHS_out = NaN(12,colM,n_series); % Array with the definitive monthly series
+cosz_out = NaN(365*24*num_obs,1); % Save cosine of zenith angle in case of interpolation
+SERIES_out_int = SERIES_out; % Interpolated series (for variables not included in the validation)
+name_series = cell(1,n_series);
+addVars = 4; otherMeteo = cell(12,addVars,n_series); % Save which additional meteorological variables are included with the data
 
-    fprintf('Generating the %s serie for simulation \n',nombre_serie); 
-        
-    for mes=1:12
-       % EXTRACCIÓN DE VALORES DE LAS SERIES 
-       SERIES_mes=[];
-       %tengo que identifiar el nombre del año que tengo leer EL FICHERO
-       anno=series(mes,i);
-       
-       % fichero con los datos validados e interpolados
-       load(strcat(ruta_val,'\',name,'-',num2str(anno),'_VAL'));
-       num_obs = datosval.timedata.num_obs;
-       datos   = datosval.matc;
-       if mes == 1; cosZ = datosval.astro(:,8);         
-       end
-       
-       fila_ini=num_dias_ant(mes)*24*num_obs+1; 
-       fila_fin=fila_ini+(num_dias_mes(mes)*24*num_obs)-1;   
-       
-       SERIES_mes=datos(fila_ini:fila_fin,:);
-       SERIES_meses=[SERIES_meses;SERIES_mes];
-       
-       % EXTRACCIÓN DE VALORES DIARIOS
-       dias_mes=[];
-       [dias_annos, texto]=xlsread(filename_val,'Val-dia');
-       anno_ini=str2num(texto{1,1}(1:4));
-       anno_fin=str2num(texto{1,end}(1:4));
-       annos=[anno_ini:anno_fin];
-       num=find(annos==anno);
-       
-       col_ini=1+6*(num-1);
-       col_fin=col_ini+5;
-       
-       fil_ini=num_dias_ant(mes)+1; %los datos empiezan en la fila 2
-       fil_fin=fil_ini+(num_dias_mes(mes))-1;
-              
-       dias_mes=dias_annos(fil_ini:fil_fin,col_ini:col_fin);
-       dias_meses=[dias_meses;dias_mes];
-       
-       % EXTRACCIÓN DE LOS VALORES MENSUALES
-       valores_mes=[];
-       meses_annos=xlsread(filename_val,'Val-mes');
-       fil=mes;
-              
-       valores_mes=meses_annos(fil,col_ini:col_fin);
-       valores_meses=[valores_meses;valores_mes];
-       
-       %CALCULA LOS CAMBIOS DE DÍAS
-       A=dias_mes(:,[1 cols_trab(2)]);
-       A(:,2)=A(:,2)/1000;
- 
-       valor_mes=valores_meses(mes,cols_trab(2));
-       VMO=meses_objetivo(mes,i);
-        
-       if valor_mes <= VMO
-           [resultado,usados,cambiados,contador,control]...
-               =Cambia_dias_sube(mes,A,VMO,max_cambios,dist_dias,max_uso);
-       elseif valor_mes > VMO
-           [resultado,usados,cambiados,contador,control]...
-               =Cambia_dias_baja(mes,A,VMO,max_cambios,dist_dias,max_uso);
-       end
-       final.resultado{i,mes}=resultado;
-       final.usados{i,mes}=usados;
-       final.cambiados{i,mes}= cambiados;
-       final.contador{i,mes}=contador;
-       final.control{i,mes}=control;
-       
-       SERIES_sal=SERIES_mes;
-       dias_sal=dias_mes;
-       valores_sal(mes,1:2)=valores_mes([2 5]);
-       % Aplica los cambios de días a las series
-       if contador<=max_cambios
-           Dias_input=resultado(:,end-1);
-           Dias_ord=1:num_dias_mes(mes);
-           cambiados=Dias_input~=Dias_ord';
-           pos_dias_fin=find(cambiados); % posiciones de los cambiados
-           dias_origen=Dias_input(pos_dias_fin);
-           for num=1:numel(pos_dias_fin)
-               Inicio_dia_fin=1+(pos_dias_fin(num)-1)*24*num_obs;
-               Fin_dia_fin=Inicio_dia_fin+24*num_obs-1;
-               
-               Inicio_dia_origen=1+(dias_origen(num)-1)*24*num_obs;
-               Fin_dia_origen=Inicio_dia_origen+24*num_obs-1;
-               
-               SERIES_sal(Inicio_dia_fin:Fin_dia_fin,:)=SERIES_mes(Inicio_dia_origen:Fin_dia_origen,:);
-              
-               dias_sal(pos_dias_fin(num),:)=dias_mes(dias_origen(num),:);
-           end
-       end 
-       
-       SERIES_salida=[SERIES_salida;SERIES_sal];
-       dias_salida=[dias_salida;dias_sal];
-
-       valores_sal(mes,1)=sum(dias_sal(:,2))/1000;
-       valores_sal(mes,2)=sum(dias_sal(:,5))/1000;
+for i=1:n_series
+    nameSerie = text_series_in{1,i+1}; % Creation path for results
+    nameSerie(nameSerie=='/') = '-'; % Replace '/' by '-' for path creation
+    name_series{i} = nameSerie;
+    path_series = strcat(path_asr,'\',name_series{i});
+    if ~exist(path_series,'dir')
+        mkdir(path_series);
     end
-
-    objetivo_meses=round(meses_objetivo(:,i));
-
     
-    output_series(:,:,i)=SERIES_salida;
-
-    %---------------------------------------
-    [output_series_int,num_out]=interpolating_holes(output_series,cosZ);
-
-    %---------------------------------------
-    %Guarda los valores del año FINAL
-
-    %Desactiva el warning de que se cree una nueva hoja excel.
+    path_fig = strcat(path_series,'\','figures'); % Creation path for figures
+    if ~exist(path_fig,'dir')
+        mkdir(path_fig);
+    end
+    
+    fprintf('\nGenerating the %s series for simulation.\n',name_series{i});
+    switch variable{i}
+        case 'GHI'
+            col_main_m = 7; % Each year, in Validation data structure
+            cols_main_m = 1:3; % Each year, in Excel file (Validation Report)
+        case 'DNI'
+            col_main_m = 9; % Each year, in Validation data structure
+            cols_main_m = 4:6; % Each year, in Excel file (Validation Report)
+        otherwise
+            warning(strcat('The main variable is not identificable in Excel file ',...
+                filename_input,' within the sheet VARIABLE.'))
+    end
+    
+    MV = zeros(12,1); % To save monthly value
+    
+    for m = 1:12 % Extraction of the series, daiily and monthly values
+        year = series_in(m,i); % Get the number of the year to read the corresponding data
+        
+        % Get the series data ---------------------------------------------
+        % Structure with the validated data (Interpolation and Substitution done)
+        load(strcat(path_val,'\',namef,'-',num2str(year),'_VAL'));
+        num_obs = dataval.timedata.num_obs;
+        
+        % Rows of the month according with the number of observations
+        row_m_obs_ini = num_previous_days(m)*24*num_obs+1; % Remember, after validation all years have 365 days
+        row_m_obs_end = row_m_obs_ini+(num_days_m(m)*24*num_obs)-1;
+        
+        series_m = dataval.mqc(row_m_obs_ini:row_m_obs_end,:);
+        cosz_m = dataval.astro(row_m_obs_ini:row_m_obs_end,8); % Cosine of the solar zenith angle
+        
+        % Get the daily data ----------------------------------------------
+        n_year = find(years_val==year); % Position of the year
+        % Columns of the year selected
+        col_y_ini = 1+colD*(n_year-1);
+        col_y_end = col_y_ini+5;
+        % Rows of the month according with the number of days
+        row_m_d_ini = num_previous_days(m)+1; % Remember, after validation all years have 365 days
+        row_m_d_end = row_m_d_ini+num_days_m(m)-1;
+        
+        days_m_val = days_y_val(row_m_d_ini:row_m_d_end,col_y_ini:col_y_end); % Get data
+        
+        % Get the monthly data --------------------------------------------
+        month_val = month_y_val(m,col_y_ini:col_y_end); % Get data
+        
+        % Verification of values coherence --------------------------------
+        % Check if all data is a valid number
+        i_data = ~isnan(series_m(:,col_main_m)) & series_m(:,col_main_m)~=-999;
+        if sum(i_data)~=size(series_m,1)
+            warning('Some non-identifiable data are in the final series of the main variable.\n Please verify (NaN or -999) in the year %d and month %d.',...
+                year,m)
+        end
+        
+        % Monthly value from the monthly validation Excel report
+        MV(m) = month_val(1,cols_main_m(2));
+        % Monthly value is equal to the sum of the series values after validation
+        series_MV = round(sum(series_m(i_data,col_main_m))/(num_obs*1000)); % kWh/m2
+        if series_MV~=MV(m)
+            warning('The sum up of the series radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
+                year,m)
+        end
+        
+        % Monthly value is equal to the sum of the series daily values
+        daily_MV = round(sum(days_m_val(:,cols_main_m(2)))/1000); % kWh/m2
+        if daily_MV~=MV(m)
+            warning('The sum up of the daily radiation data of the year %d and month %d\n do not correspond with the monthly value of the candidate month.',...
+                year,m)
+        end
+        % If no warnings: All values are coherent
+        
+        % Check difference between monthly irradiance value and RMV -------
+        % Equation (6) Standard IEC 62862-1-2
+        limit = (ARV(i)/12)*0.02; % Limit of the difference between monthly value and RMV
+        if abs(RMV(m,i)-MV(m)) >= limit
+            days_m = [days_m_val(:,1) days_m_val(:,cols_main_m(2))/1000]; % # of day and daily irradiance in kWh/m2
+            if MV(m) <= RMV(m,i) % Monthly value must increment
+                [resultSubs,substituted,used,counter,ctrl,warn]...
+                    = subs_days_up(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
+            elseif MV(m) > RMV(m,i) % Monthly value must decrement
+                [resultSubs,substituted,used,counter,ctrl,warn]...
+                    = subs_days_dw(m,days_m,RMV(m,i),limit,max_dist,max_times,max_subs); % Function
+            end
+            if warn
+                fprintf('Year: %d, Month: %d\n',year,m);
+            end
+        else % No substitutions are carried out
+            resultSubs = NaN; substituted = NaN; used = NaN;
+            counter = NaN; ctrl = NaN;
+        end
+        finalSubs.result{i,m} = resultSubs;
+        finalSubs.substituted{i,m} = substituted;
+        finalSubs.used{i,m} = used;
+        finalSubs.counter{i,m} = counter;
+        finalSubs.ctrl{i,m} = ctrl;
+        
+        % Apply the last substitutions ------------------------------------
+        if ~isnan(resultSubs)
+            subs_days = (1:num_days_m(m))'.*substituted; % Index of the substituted days
+            subs_days(subs_days==0) = []; % Trim zeros
+            final_days = resultSubs(:,end-1); % Final days after substitutions
+            origin_days = final_days(substituted); % Origin day for each substitution
+            for k = 1:size(subs_days,1)
+                if days_m_val(subs_days(k),1)~=days_m_val(origin_days(k),4) % Substitution did not make yet
+                    lin_ini_orig = (origin_days(k)-1)*24*num_obs+1;
+                    lin_end_orig = origin_days(k)*24*num_obs;
+                    lin_ini_subs = (subs_days(k)-1)*24*num_obs+1;
+                    lin_end_subs = subs_days(k)*24*num_obs;
+                    
+                    series_m(lin_ini_subs:lin_end_subs,1:end) = series_m(lin_ini_orig:lin_end_orig,1:end); % Update series of the month
+                    days_m_val(subs_days(k),:) = days_m_val(origin_days(k),:); % Update daily series of the month
+                end
+            end
+            month_val(1,[2,5]) = round([sum(days_m_val(:,2)) sum(days_m_val(:,5))]/1000,2); % Update month irradiance values
+            month_val(1,[3,6]) = 2; % Update monthly validation flags !!! 2?
+        end
+        
+        % Output Series ---------------------------------------------------
+        SERIES_out(row_m_obs_ini:row_m_obs_end,1:size(series_m,2),i) = series_m;
+        DAYS_out(row_m_d_ini:row_m_d_end,:,i) = days_m_val;
+        MONTHS_out(m,:,i) = month_val;
+        cosz_out(row_m_obs_ini:row_m_obs_end) = cosz_m;
+        
+        % Save which additional meteorological variables are included with the data
+        addMeteo = length(dataval.header)-9;
+        if addMeteo~=0
+            otherMeteo(m,1:addMeteo,i) = dataval.header(10:end);
+        end
+    end
+    
+    %% Calculation or Interpolation of the other variables
+    % Variables not inclued in the validation process are interpolated
+    [SERIES_out_int(:,1:12,i),num_cases] = interpolating_holes(SERIES_out(:,1:12,i),cosz_out,num_obs); % Function
+    fprintf('Final interpolation results of the %s series\n',name_series{i});
+    fprintf('# of GHI data calculated from the other variables: %d\n',num_cases(1));
+    fprintf('# of DNI data calculated from the other variables: %d\n',num_cases(2));
+    fprintf('# of DHI data calculated from the other variables: %d\n',num_cases(3));
+    fprintf('# of DNI data interpolated and GHI calculated: %d\n',num_cases(4));
+    fprintf('# of DNI data interpolated and DHI calculated: %d\n',num_cases(5));
+    fprintf('# of GHI data interpolated and DHI calculated: %d\n',num_cases(6));
+    fprintf('# of GHI, DNI data interpolated and DHI calculated: %d\n',num_cases(7));
+    SERIES_out_int(:,13:end,i) = SERIES_out(:,13:end,i); % Add other meteo vars
+        
+    %% Write down EXCEL series report
+    filename_out = strcat(path_series,'\',namef,'_',name_series{i},'.xlsx'); % Output Generation
+    fprintf('Generating EXCEL report for %s series\n',name_series{i});
+    
+    % Switch off new excel sheet warning
     warning off MATLAB:xlswrite:AddSheet
 
-    %Escribe los valores DIARIOS del año seleccionado
-    xlswrite(filename_out,dias_meses,strcat(nombre_serie,'_Dini'),'A1');
-    %Escribe los valores DIARIOS del año FINAL
-    xlswrite(filename_out,dias_salida,strcat(nombre_serie,'_Dfin'),'A1');
-
-    %Escribe los valores MENSUALES del año seleccionado, OB y FIN
-    xlswrite(filename_out,[{'YEARini'},{'GHIini'},{'DNIini'},{'OBJ'},{''},{'GHIend'},{'DNIend'},{'Cambios'}],...
-        strcat(nombre_serie,'_M'),'A1');
-    % initial year by month
-    xlswrite(filename_out,series(:,i),strcat(nombre_serie,'_M'),'A2');
-    % initial values of GHi and DNI by month
-    xlswrite(filename_out,valores_meses(:,[2 5]),strcat(nombre_serie,'_M'),'B2');
-    % objetives (DNI) by each month
-    xlswrite(filename_out,objetivo_meses,strcat(nombre_serie,'_M'),'D2');
-    % final values
-    xlswrite(filename_out,round(valores_sal),strcat(nombre_serie,'_M'),'F2');
-    % final cambios
-    xlswrite(filename_out,final.contador',strcat(nombre_serie,'_M'),'H2');
-  
-    %---------------------------------------
-    % export to txt file
-    fprintf('Generating the TXT %s serie for simulation \n',nombre_serie); 
-
-    % TXT of original Series (num_obs) 
-    fileID = fopen(strcat(ruta_serie,'\','MY_',nombre_serie,'.txt'),'w');
-    header{1} = 'YEAR'; header{2}= 'MONTH';  header{3}= 'DAY';
-    header{4} = 'HOUR'; header{5}= 'MINUTE'; header{6}= 'SECOND';
-    header{7} = 'GHI(wh/m2)'; header{8}=  'eGHI';  
-    header{9} = 'DNI(wh/m2)'; header{10}= 'eDNI'; 
-    header{11}= 'DHI(wh/m2)'; header{12}= 'eDHI';
-    for col=1:11
-        fprintf(fileID,'%10s\t',header{col});
+    % Write the definitive daily series of the typical year ---------------
+    headerD{1} = 'Year'; headerD{2} = 'Month';
+    headerD{3} = 'day GHI'; headerD{4} = 'GHI (Wh/m2)'; headerD{5} = 'fdvGHI';
+    headerD{6} = 'day DNI'; headerD{7} = 'DNI (Wh/m2)'; headerD{8} = 'fdvDNI';
+    headerD{9} = 'Substituted';
+    
+    % Year and month for daily results
+    year_y = zeros(365,1); year_m = zeros(365,1); k = 1; % No leap years
+    substituted_ex = false(365,1);
+    for month = 1:12
+        row_m_d_ini = num_previous_days(month)+1;
+        row_m_d_end = row_m_d_ini+num_days_m(month)-1;
+        if ~isnan(finalSubs.substituted{i,month}) % If susbstitutions were carried out in this module
+            substituted_ex(row_m_d_ini:row_m_d_end) = finalSubs.substituted{i,month};
+        end
+        for d = 1:num_days_m(month)
+            year_y(k) = series_in(month,i);
+            year_m(k) = month;
+            k = k+1;
+        end
     end
-    fprintf(fileID,'%10s\r\n',header{12});
-    fprintf(fileID,...
-        '%10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\t %10d\r\n',...
-        output_series_int(:,:,i)');
-    fclose(fileID);
     
+    day_ex = num2cell([year_y year_m DAYS_out(:,:,i) substituted_ex]);
+    xlswrite(filename_out,[headerD; day_ex],strcat(name_series{i},'_D'),'A1');
+        
+    % Write the definitive monthly series of the typical year -------------
+    headerM{1} = 'Year';
+    headerM{2} = 'month'; headerM{3} = 'GHI (kWh/m2)'; headerM{4} = 'fmvGHI';
+    headerM{5} = 'month'; headerM{6} = 'DNI (kWh/m2)'; headerM{7} = 'fmvDNI';
+    headerM{8} = [variable{i} ' RMV']; headerM{9} = ['Initial ' variable{i}];
+    headerM{10} = 'Substitutions';
     
-%     % Plotting solar radiation outputs
-%     figure; 
-%     plot(output_series_int(:,7,i) ,'-b')
-%     axis([1 525600 0 1600]); grid on;
-%     title(['(' nombre_serie ') - GHI' ],'Fontsize',16);
-%     xlabel('Observations','Fontsize',16);
-%     ylabel('Wh/m^2','Fontsize',16);
-%     filename=strcat(nombre_serie,'-GHI');
-%     print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-% 
-%     figure; 
-%     plot(output_series_int(:,9,i) ,'-r')
-%     axis([1 525600 0 1600]); grid on;
-%     title(['(' nombre_serie ') - DNI' ],'Fontsize',16);
-%     xlabel('Observations','Fontsize',16);
-%     ylabel('Wh/m^2','Fontsize',16);
-%     filename=strcat(nombre_serie,'-DNI');
-%     print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-%     
-%     figure; 
-%     plot(output_series_int(:,11,i),'-c')
-%     axis([1 525600 0 1000]); grid on;
-%     title(['(' nombre_serie ') - DHI' ],'Fontsize',16);
-%     xlabel('Observations','Fontsize',16);
-%     ylabel('Wh/m^2','Fontsize',16);
-%     filename=strcat(nombre_serie,'-DHI');
-%     print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
-%     close all
-%     num=0;
-% 
-%     for mes=1:12
-%         for dia=1:num_dias_mes(mes)
+    subs_ex = cell2mat(finalSubs.counter(i,:))'; % For Excel report
+    month_ex = num2cell([series_in(:,i) MONTHS_out(:,:,i) RMV(:,i) MV subs_ex]);
+    xlswrite(filename_out,[headerM; month_ex],strcat(name_series{i},'_M'),'A1');
+    
+    %% Plot figures
+    % Plotting solar radiation outputs
+    figure;
+    plot(SERIES_out_int(:,7,i) ,'-b') % Definitive GHI series -------------
+    axis([1 365*24*num_obs 0 1600]); grid on;
+    title([name_series{i},' - GHI'],'Fontsize',16);
+    xlabel('Observations','Fontsize',16);
+    ylabel('W/m^2','Fontsize',16);
+    filename = strcat(name_series{i},'-GHI');
+    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    
+    figure;
+    plot(SERIES_out_int(:,9,i) ,'-r') % Definitive DNI series -------------
+    axis([1 365*24*num_obs 0 1600]); grid on;
+    title([name_series{i},' - DNI'],'Fontsize',16);
+    xlabel('Observations','Fontsize',16);
+    ylabel('W/m^2','Fontsize',16);
+    filename = strcat(name_series{i},'-DNI');
+    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    
+    figure;
+    plot(SERIES_out_int(:,11,i),'-c') % Definitive DHI series -------------
+    axis([1 365*24*num_obs 0 1000]); grid on;
+    title([name_series{i},' - DHI'],'Fontsize',16);
+    xlabel('Observations','Fontsize',16);
+    ylabel('W/m^2','Fontsize',16);
+    filename = strcat(name_series{i},'-DHI');
+    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    close all
+    
+    % Daily figures - Are you sure you want to do this? -------------------
+%     numD = 0;
+%     for month = 1:12
+%         for day = 1:num_days_m(month)
+%             numD = numD+1;
+%             first = (numD-1)*24*num_obs+1;
+%             last = numD*24*num_obs;
 %             
-%             num=num+1;
-%             inicio=(num-1)*24*num_obs+1;
-%             fin =(num)*24*num_obs;
+%             day_piece = SERIES_out_int(first:last,:,i);
 %             
-%             trozo = output_series_int(inicio:fin,:,i);
+%             year_str = num2str(day_piece(1,1));
+%             month_str = num2str(month);
+%             day_str = num2str(day);
 %             
-%             anno_str= num2str(trozo(1,1));
-%             mes_str = num2str(mes);
-%             dia_str = num2str(dia);
-%                        
-%             i0=datosval.astro(inicio:fin,9);
-%             hora = trozo(:,4);
-%             min =  trozo(:,5 );
-%             horadec = hora + min./60;
-%             GHI = trozo(:,7 );
-%             DNI = trozo(:,9 );
-%             DHI = trozo(:,11);
+%             G0 = dataval.astro(first:last,9); % Extraterrestrial solar radiation (W/m2)
+%             hour = day_piece(:,4);
+%             min = day_piece(:,5);
+%             hourdec = hour+min/60;
+%             GHI = day_piece(:,7);
+%             DNI = day_piece(:,9);
+%             DHI = day_piece(:,11);
 %             
-%             figure
-% 
-%             fecha_str=['Month ' mes_str ' - Day ' dia_str ' - Year ' anno_str ];
-% 
-%             plot(horadec,i0,'-k');
-%             hold on
-%             plot(horadec,GHI,'b-o');
-%             plot(horadec,DNI,'r-o');
-%             plot(horadec,DHI,'c-o');
-%             axis([ 0 24 0 1600]);
+%             date_str = ['Month ' month_str ' - Day ' day_str ' - Year ' year_str];
+%             
+%             figure;
+%             plot(hourdec,G0,'-k'); hold on
+%             plot(hourdec,GHI,'b-o');
+%             plot(hourdec,DNI,'r-o');
+%             plot(hourdec,DHI,'c-o');
+%             axis([0 24 0 1600]);
 %             grid on
-%             title(['(' nombre_serie ') - ' fecha_str ],'Fontsize',16);
+%             title([name_series{i},' - ',date_str],'Fontsize',16);
 %             xlabel('Local Universal Time','Fontsize',16);
-%             ylabel('Wh/m^2','Fontsize',16);
-%             leg=legend('GHo','GHI','DNI','DHI');
+%             ylabel('W/m^2','Fontsize',16);
+%             leg = legend('G0','GHI','DNI','DHI');
 %             set(leg,'Fontsize',16);
-%             filename=strcat(nombre_serie,'-',fecha_str);
-%             print('-djpeg','-zbuffer','-r350',strcat(ruta_fig,'\',filename))
+%             filename = strcat(name_series{i},'-',date_str);
+%             print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
 %             close all
-% 
 %         end
 %     end
     
 end
-save(strcat(ruta_tmy,'\','output_series'),'output_series_int',...
-    'num_series','raw','datosval');
+
+save(strcat(path_asr,'\','out_series'),'name_series','series_in','SERIES_out_int',...
+    'DAYS_out','MONTHS_out','finalSubs','otherMeteo'); % Save results

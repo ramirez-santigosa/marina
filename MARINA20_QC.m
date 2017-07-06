@@ -6,55 +6,64 @@
 %
 % MODULE 2: QC (Quality control)
 % Version of July, 2015. L. Ramírez; At CSIRO.
+% Update F. Mendoza (February 2017) at CIEMAT.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INPUT: 
-% ..\OUTPUTS\1_FORMAT
-%       One matlab file per year: datos    'ASP00-BOM-01-1995' 
-%       Each file contains the structured variable   'datos'
-% 
-% OUTPUTS: 
-% ..\OUTPUT\2_QC
-%       One matlab file per year: datosc   'ASP00-BOM-01-1995_QC' 
-%       Each file contains the structured variable   'datosc'
-%       Same as "datos" but adding two more variables,
-%           (records are sorted and a the year is full)
-%  (1)  datos.matc  = [fecha_vec(:,1:6)(TSV)/ GHIord eGHI DNIord eDNI DHIord eDHI];
-%  (2)  datos.astro = [dj e0 ang_dia et tsv_horas w dec cosz i0 m];
+% INPUT:
+% ..\OUTPUT\1_FORMAT
+%       One Matlab file per year i.e. 'loc00-owner_station-num-YYYY'
+%       Each file contains the structured variable 'data'
 %
-%       figuras filtros por variables
-%       figura ghi medida vs. calculada
+% OUTPUT:
+% ..\OUTPUT\2_QC
+%       One Matlab file per year i.e. 'loc00-owner_station-num-YYYY_QC'
+%       Each file contains the structured variable 'dataqc'
+%       Same as "data" but adding two fields
+%       (records are sorted and the year is complete)
+%  (1)  dataqc.mqc  = [date_vec(:,1:6)(TST) GHIord fGHI DNIord fDNI DHIord fDHI others]
+%  (2)  datosqc.astro = [dj e0 ang_day et tst_hours w dec cosz G0 m]
+%
+%       Figures Tests per variables
+%       Figures GHI measured vs. calculated
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-clear
-clc
-close all
-run('Configuration_BSRN_ASP.m');
 
-for anno=anno_ini:anno_end
-    
-    anno_str     = num2str(anno);
-    
-    disp(sprintf('Treatment of %s year %s',name,anno_str)); 
+close, clearvars -except cfgFile, %clc
+run(cfgFile); % Run configuration file
 
-    ruta_fig_anno_ini=strcat(ruta_qc,'\','figures');
-    [s,mess,messid] = mkdir(ruta_fig_anno_ini);
-    var      = [1 1 1]; % Variables for QC process [GHI DNI DHI] 1(yes)/0(no)
-    ofset_empirico = 0; % Just in case the results seems have timestamp mistakes
-    max_rad  = 1600;    % max. solar radiation value for the figures
-    % columns of the .mat matrix
-    mat_cols.date = 1:6; % dates[1..6];
-    mat_cols.GHI = 7;   
-    mat_cols.DNI = 8;   
-    mat_cols.DHI = 9;   
-
-    filedata.ID     = anno_str; 
+for y = year_ini:year_end
     
-    name_out = [filedata.loc '00-' filedata.own '-' filedata.num '-' filedata.ID];
-    load(strcat(ruta_format,'\',name_out));
+    year_str = num2str(y);
+    fprintf('Quality control of %s year %s\n',name,year_str);
     
-    [datosc]=QC_JULY_2015...
-       (ruta_fig_anno_ini,datos,var,max_rad,mat_cols,zonaH,ofset_empirico);  
+    path_fig_year_ini = strcat(path_qc,'\','figures');
+    if ~exist(path_fig_year_ini,'dir')
+        mkdir(path_fig_year_ini);
+    end
+    
+    ID = year_str;
+    name_out = [loc '00-' owner_station '-' num '-' ID];
+    name_in = strcat(path_format,'\',name_out,'.mat');
+    if exist(name_in,'file')==2
+        load(name_in); % Load of the standard data structure
+    else
+        warning('The file %s does not exist.\n The year %d will be skipped in the QC process.',...
+            name_in,y);
+        continue
+    end
+    
+    % Columns of the variable in the standard data matrix
+    mat_cols.date = 1:6;
+    mat_cols.GHI = 7;
+    mat_cols.DNI = 8;
+    mat_cols.DHI = 9;
+    if size(data.mat,2)>9
+        mat_cols.others = 10:size(data.mat,2);
+    else
+        mat_cols.others = [];
+    end
+    
+    dataqc = QC(path_fig_year_ini,data,vars,max_rad,mat_cols,tzone,name,Isc,offset_empirical);
     close all
     
-    save(strcat(ruta_qc,'\',name_out,'_QC'),'datosc');
+    save(strcat(path_qc,'\',name_out,'_QC'),'dataqc');
     
-end    
+end
