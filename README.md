@@ -5,7 +5,7 @@ A Tool for Solar Radiation Series Generation
 
 MARINA (Multi annual radiation information approach) is a package of MATLAB® M-files purpose to standardize the procedure for solar radiation series generation, starting from raw data and providing a clean and inter-comparable data bank. A brief summary of each module included in this tool is below: 
 
-![Diagram](/other/marina-Files.png "Diagram of the MARINA package")
+![Diagram](/other/marina-Files.jpeg "Diagram of the MARINA package")
 
 ### Modules: ###
 
@@ -13,9 +13,9 @@ MARINA (Multi annual radiation information approach) is a package of MATLAB® M-
 * Quality Control (QC): a slightly modified version of the Quality Control (QC) process described in (Moreno-Tejera et al., 2015) is used for this module. A final fourth test was added, which is passed if the GHI measured value is between +/- 50 W/m2 of the GHI value calculated from its measured components.
 * Validation and Gap Filling: based on the procedure indicated in the (IEC/TS 62862-1-2, 2017) standard, which is expected to be published soon. The process has two stages: Daily and Monthly Validation. In the first one, a day is considered valid if it has a cumulated period of irradiance anomalous values (those values that do not pass the QC) less than one hour. The anomalies of a possible valid day are corrected coherently using linear interpolation. The daily validation process can be applied to each irradiance variable independently. Later, a month is considered valid if it has less than four non-valid days. To find the monthly irradiance value of a valid month with anomalous days, the measured values on these days are substituted by the values of the day with its irradiance value closest to the monthly mean value within a range of no more than ±5 days from the substituted day.
 * Selection of Typical Meteorological Months (TMM): This module implements the selected TMY methodologies. To avoid possible misunderstandings, ‘TMY’ will be used to refer the Typical Meteorological Year methodologies in general, while ‘ASR’ will be used to refer the Annual Solar Radiation series produced after the execution of a specific TMY methodology. The TMY methodologies included in this tool are:
-  * IEC 62862-1-2 Option 1 (IEC1/SNL): Referred as “One source” in (IEC/TS 62862-1-2, 2017). It is an adaptation of the well-known SNL method (Hall et al., 1978).
-  * Alternative “Less Missing Records” (IEC1/LMR): It is an alternative to the previous procedure with a change in the final selection criterion.
-  * IEC 62862-1-2 Option 2 (IEC2): Referred as “Several sources” in (IEC/TS 62862-1-2, 2017).
+  * IEC 62862-1-2 Option 1 (IEC1/SNL): Referred as “One source�? in (IEC/TS 62862-1-2, 2017). It is an adaptation of the well-known SNL method (Hall et al., 1978).
+  * Alternative “Less Missing Records�? (IEC1/LMR): It is an alternative to the previous procedure with a change in the final selection criterion.
+  * IEC 62862-1-2 Option 2 (IEC2): Referred as “Several sources�? in (IEC/TS 62862-1-2, 2017).
   * Danish method (DRY): Adaptation of the Danish method as described in (Lund, 1995).
   * Festa and Ratto (F-R): Adaptation of the Festa and Ratto procedure as described in (Festa and Ratto, 1993)
 * Annual Series Generation: this module concatenates the selected TMM from the whole data set delivered by the validation module to form the final ASR series. This module also performs the day’s substitutions required for the option 2 (IEC/TS 62862-1-2, 2017) standard.
