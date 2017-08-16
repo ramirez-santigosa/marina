@@ -88,7 +88,7 @@ legend(leg,'Interpreter','none'), xlabel('Time'), ylabel('Irradiance [W/m2]')
 [mm,~] = string_chars_num(finalDay(2),2);
 [dd,~] = string_chars_num(finalDay(3),2);
 date = strcat(num2str(finalDay(1)),mm,dd); module = 'val';
-print('-djpeg','-opengl','-r350',strcat(path_fig,'\Radiation','_',date,'_',module))
+print('-dtiff','-opengl','-r350',strcat(path_fig,'\Radiation','_',date,'_',module))
 
 for i = 0:length(colsVars)-1
     figure;
@@ -101,7 +101,7 @@ for i = 0:length(colsVars)-1
     ylabel('Quality Control Flag')
     set(gca,'YLim',[0 max(qcf)],'YTick',0:max(qcf))
     legend(legfQC(i+1,:),'Interpreter','none')
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',legfQC{i+1,2},'_',date,'_',module))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',legfQC{i+1,2},'_',date,'_',module))
 end
 
 end

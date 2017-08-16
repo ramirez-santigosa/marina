@@ -264,13 +264,13 @@ title(ax4,'Smoothed long-term (\mu_x and \sigma_x)')
 legend({'Mean', 'Std. dev.'},'Location','NorthEast');
 xlim([1 365]); ylabel(ax4,'DNI (Wh/m^2)')
 xlabel(ax4,'Days')
-print('-djpeg','-opengl','-r350',fileName)
+print('-dtiff','-opengl','-r350',fileName)
 
 % Z -----------------------------------------------------------------------
 figure; plot(period,Zc(start:end))
 title('Standardized z residuals (Z)')
 ylabel('Z'); xlabel('Years'); fileName = [fileOut(1:end-5) '-Z'];
-print('-djpeg','-opengl','-r350',fileName)
+print('-dtiff','-opengl','-r350',fileName)
 
 % Long Term CDF -----------------------------------------------------------
 figCDFLTX = CDFLTX_cumpct(:,3:end);

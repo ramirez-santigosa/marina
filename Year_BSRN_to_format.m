@@ -121,7 +121,7 @@ set(hleg,'Location','SouthEastOutside');
 set(hleg,'Fontsize',16);
 grid on;
 % saveas(gcf,strcat(path_out,'\','Summary',yyyy),'png');
-print('-djpeg','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
+print('-dtiff','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
 
 %% Make a structure for each year
 

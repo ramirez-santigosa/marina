@@ -273,7 +273,7 @@ for i=1:n_series
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
     filename = strcat(name_series{i},'-GHI');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',filename))
     
     figure;
     plot(SERIES_out_int(:,9,i) ,'-r') % Definitive DNI series -------------
@@ -282,7 +282,7 @@ for i=1:n_series
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
     filename = strcat(name_series{i},'-DNI');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',filename))
     
     figure;
     plot(SERIES_out_int(:,11,i),'-c') % Definitive DHI series -------------
@@ -291,7 +291,7 @@ for i=1:n_series
     xlabel('Observations','Fontsize',16);
     ylabel('W/m^2','Fontsize',16);
     filename = strcat(name_series{i},'-DHI');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',filename))
     close all
     
     % Daily figures - Are you sure you want to do this? -------------------
@@ -331,7 +331,7 @@ for i=1:n_series
 %             leg = legend('G0','GHI','DNI','DHI');
 %             set(leg,'Fontsize',16);
 %             filename = strcat(name_series{i},'-',date_str);
-%             print('-djpeg','-opengl','-r350',strcat(path_fig,'\',filename))
+%             print('-dtiff','-opengl','-r350',strcat(path_fig,'\',filename))
 %             close all
 %         end
 %     end

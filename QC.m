@@ -310,7 +310,7 @@ if sum(vars)==3
     grid on; axis square
     set(gca,'XTick',0:400:max_rad);
     set(gca,'YTick',0:400:max_rad);
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_COHER'))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',file_name,'_COHER'))
 end
 clear test0 test1 test2 test3 test4
 
@@ -352,7 +352,7 @@ if sum(vars)==3
         grid on; axis square
         set(gca,'XTick',0:400:max_rad);
         set(gca,'YTick',0:400:max_rad);
-        print('-djpeg','-opengl','-r350',strcat(path_fig_month,'\',file_name,'_COHER_M',m_str))
+        print('-dtiff','-opengl','-r350',strcat(path_fig_month,'\',file_name,'_COHER_M',m_str))
     end
 end
 
@@ -404,7 +404,7 @@ if vars(1)==1
     plot(x1,y1,'oc');
     plot(x2,y2,'oc');
     plot(x3,y3,'oc');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_GHI'))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',file_name,'_GHI'))
 end
 
 % DNI ANNUAL GRAPH --------------------------------------------------------
@@ -430,7 +430,7 @@ if vars(2)==1
     plot(x1,y1,'oc');
     plot(x2,y2,'oc');
     plot(x3,y3,'oc');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_DNI'))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',file_name,'_DNI'))
 end
 
 % DHI ANNUAL GRAPH --------------------------------------------------------
@@ -456,7 +456,7 @@ if vars(3)==1
     plot(x1,y1,'oc');
     plot(x2,y2,'oc');
     plot(x3,y3,'oc');
-    print('-djpeg','-opengl','-r350',strcat(path_fig,'\',file_name,'_DHI'))
+    print('-dtiff','-opengl','-r350',strcat(path_fig,'\',file_name,'_DHI'))
 end
 
 %% OUTPUT

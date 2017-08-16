@@ -166,7 +166,7 @@ plot(smooth_LTDM_DNI);
 title(ax2,'Smoothed LTDM (\mu_x)')
 xlim([1 365]); ylabel(ax2,'DNI (Wh/m^2)')
 xlabel(ax2,'Day')
-print('-djpeg','-opengl','-r350',fileName)
+print('-dtiff','-opengl','-r350',fileName)
 
 % Y -----------------------------------------------------------------------
 Yc = reshape(Y,[],1);
@@ -182,6 +182,6 @@ start = length(Yc)-10*365+1;
 figure; plot(period,Yc(start:end))
 title('Daily DNI residuals (Y)')
 ylabel('Y (Wh/m^2)'); xlabel('Years'); fileName = [fileOut(1:end-5) '-Y'];
-print('-djpeg','-opengl','-r350',fileName)
+print('-dtiff','-opengl','-r350',fileName)
 
 end

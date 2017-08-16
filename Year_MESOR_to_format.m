@@ -76,7 +76,7 @@ xlabel('Variables','Fontsize',16);
 ylabel('Num. column in input file','Fontsize',16);
 xticklabels({'GHI','DNI','DHI','t air','rh','bp','ws'});
 grid on;
-print('-djpeg','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
+print('-dtiff','-opengl','-r350',strcat(path_fig,'\','Summary',yyyy))
 
 %% Make a structure for each year
 colsHeader = sum_col~=-1;

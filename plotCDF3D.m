@@ -29,7 +29,7 @@ end
 colormap(jet)
 title(titleFig), xlabel('Months'), ylabel('Bins'), zlabel('CDF')
 view([-127 30]), xticklabels(headers_m)
-print('-djpeg','-opengl','-r350',fileName)
+print('-dtiff','-opengl','-r350',fileName)
 
 % Color bar by bin
 % figure; h3 = axes; bar3(1:12,figCDF');
